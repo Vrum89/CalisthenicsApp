@@ -1,0 +1,143 @@
+{
+  "_readme": {
+    "scopo": "Seed dei 4 allenamenti recenti (24/07 → 05/08 2026) normalizzati a mano, da inserire in Supabase. Non sono nel prototipo, quindi lo script di migrazione da solo non li vede: caricali con questo file.",
+    "decisioni": [
+      "Tutti gli allenamenti sono di tipo 'freestyle' (deciso: niente ricostruzione scheda A/B).",
+      "Gli esercizi si upsertano per 'name' nella tabella exercises (creandoli se mancano). Le 'category' sono indicative, adattabili.",
+      "Per gli esercizi 'sets', metricValue = somma di repsPerSet (già calcolato qui).",
+      "I superset sono due esercizi distinti che condividono 'supersetKey' (stringa locale da mappare a un uuid per-workout) e 'supersetOrder' 0/1.",
+      "I campi nulli/non applicabili sono omessi (es. addedWeightKg assente = corpo libero)."
+    ],
+    "mappa_campi": "name→exercises.name, category→exercises.category, metricType→exercises.metric_type; per workout_exercises: scheme, repsPerSet→reps_per_set, metricValue→metric_value, addedWeightKg→added_weight_kg, variant, notes, supersetKey→superset_key, supersetOrder→superset_order."
+  },
+
+  "exercises": [
+    { "name": "Chin up", "category": "Trazioni", "metricType": "sets" },
+    { "name": "Pull up", "category": "Trazioni", "metricType": "sets" },
+    { "name": "Dip", "category": "Spinte", "metricType": "sets" },
+    { "name": "Dip (10 min)", "category": "Spinte", "metricType": "reps" },
+    { "name": "Hand stand push up (10 min)", "category": "Spinte", "metricType": "reps" },
+    { "name": "Piegamenti", "category": "Spinte", "metricType": "sets" },
+    { "name": "Circuito 25 chin up + 50 push up", "category": "Circuiti a tempo", "metricType": "time" }
+  ],
+
+  "workouts": [
+    {
+      "date": "2026-07-24",
+      "type": "freestyle",
+      "exercises": [
+        {
+          "exerciseName": "Chin up",
+          "scheme": "5x5",
+          "repsPerSet": [5, 5, 5, 5, 5],
+          "metricValue": 25,
+          "addedWeightKg": 5
+        },
+        {
+          "exerciseName": "Hand stand push up (10 min)",
+          "metricValue": 16,
+          "addedWeightKg": 5,
+          "notes": "disco 5kg — max ripetizioni in 10 minuti"
+        },
+        {
+          "exerciseName": "Pull up",
+          "scheme": "5x5",
+          "repsPerSet": [5, 5, 5, 5, 5],
+          "metricValue": 25,
+          "supersetKey": "ss-20260724",
+          "supersetOrder": 0,
+          "notes": "superset: 5 pull + 10 piegamenti ×5, riposo 2:00 tra i round"
+        },
+        {
+          "exerciseName": "Piegamenti",
+          "scheme": "5x10",
+          "repsPerSet": [10, 10, 10, 10, 10],
+          "metricValue": 50,
+          "supersetKey": "ss-20260724",
+          "supersetOrder": 1,
+          "notes": "superset: 5 pull + 10 piegamenti ×5, riposo 2:00 tra i round"
+        }
+      ]
+    },
+    {
+      "date": "2026-07-27",
+      "type": "freestyle",
+      "exercises": [
+        {
+          "exerciseName": "Chin up",
+          "scheme": "5x6",
+          "repsPerSet": [6, 6, 6, 6, 6],
+          "metricValue": 30
+        },
+        {
+          "exerciseName": "Dip (10 min)",
+          "metricValue": 50,
+          "notes": "max ripetizioni in 10 minuti"
+        },
+        {
+          "exerciseName": "Circuito 25 chin up + 50 push up",
+          "metricValue": 643,
+          "variant": "manicotto presa angolata",
+          "notes": "10:43 for time (25 chin up + 50 push up)"
+        }
+      ]
+    },
+    {
+      "date": "2026-07-30",
+      "type": "freestyle",
+      "exercises": [
+        {
+          "exerciseName": "Chin up",
+          "scheme": "5x5",
+          "repsPerSet": [5, 5, 5, 5, 5],
+          "metricValue": 25,
+          "addedWeightKg": 5
+        },
+        {
+          "exerciseName": "Hand stand push up (10 min)",
+          "metricValue": 18,
+          "addedWeightKg": 5,
+          "notes": "disco 5kg — max ripetizioni in 10 minuti"
+        },
+        {
+          "exerciseName": "Pull up",
+          "scheme": "5x5",
+          "repsPerSet": [5, 5, 5, 5, 5],
+          "metricValue": 25,
+          "supersetKey": "ss-20260730",
+          "supersetOrder": 0,
+          "notes": "superset: 5 pull + 10 piegamenti ×5, riposo 2:00 tra i round"
+        },
+        {
+          "exerciseName": "Piegamenti",
+          "scheme": "5x10",
+          "repsPerSet": [10, 10, 10, 10, 10],
+          "metricValue": 50,
+          "supersetKey": "ss-20260730",
+          "supersetOrder": 1,
+          "notes": "superset: 5 pull + 10 piegamenti ×5, riposo 2:00 tra i round"
+        }
+      ]
+    },
+    {
+      "date": "2026-08-05",
+      "type": "freestyle",
+      "exercises": [
+        {
+          "exerciseName": "Chin up",
+          "scheme": "progressive",
+          "repsPerSet": [1, 2, 3, 4, 5, 6, 7, 8],
+          "metricValue": 36,
+          "notes": "serie progressive a sfinimento da 1 a 8"
+        },
+        {
+          "exerciseName": "Dip",
+          "scheme": "progressive",
+          "repsPerSet": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+          "metricValue": 55,
+          "notes": "serie progressive a sfinimento da 1 a 10"
+        }
+      ]
+    }
+  ]
+}
