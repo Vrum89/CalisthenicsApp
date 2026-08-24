@@ -56,6 +56,41 @@ Nella dashboard del progetto:
 Il piano gratuito invia poche email all'ora e mette il progetto in pausa dopo
 ~7 giorni di inattività (i dati restano, si riattiva con un click).
 
+## Database
+
+Lo schema vive in [`supabase/schema.sql`](supabase/schema.sql): tabelle, indici,
+RLS, grant per la Data API e catalogo esercizi di default. Si applica dalla
+dashboard (**SQL Editor → New query** → incolla tutto → **Run**) ed è
+idempotente, quindi si può rieseguire dopo ogni modifica.
+
+I tipi in `src/lib/supabase/database.types.ts` rispecchiano quello schema e sono
+scritti a mano. Dopo aver applicato lo schema conviene rigenerarli dalla fonte:
+
+```bash
+npx supabase login
+npx supabase gen types typescript --project-id <project-ref> > src/lib/supabase/database.types.ts
+```
+
+## Struttura
+
+```
+src/
+  domain/      modello di dominio (camelCase) e registro metriche
+  features/    una cartella per area funzionale (auth, exercises, …)
+  lib/         client Supabase, tipi del database, mapper, env
+  components/  UI condivisa
+  routes/      schermate montate dal router
+```
+
+Due regole che vale la pena non violare:
+
+- **Il registro metriche** (`src/domain/metrics.ts`) è l'unica fonte della
+  semantica di una metrica: best min/max, direzione del trend, formattazione,
+  widget di input, tipo di grafico. Nessun altro file deve contenere un
+  `Math.max` su valori di metrica o una formattazione `mm:ss`.
+- **Lo snake_case si ferma ai mapper** (`src/lib/supabase/mappers.ts`). Fuori dal
+  data-access layer esiste solo il modello camelCase di `src/domain/types.ts`.
+
 ## Test su mobile
 
 Il device di riferimento è il Motorola Razr 50, con due superfici (spec §2.5).

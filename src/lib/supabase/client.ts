@@ -1,7 +1,10 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { readEnv } from '@/lib/env';
+import type { Database } from '@/lib/supabase/database.types';
 
-let client: SupabaseClient | null = null;
+export type AppSupabaseClient = SupabaseClient<Database>;
+
+let client: AppSupabaseClient | null = null;
 
 /**
  * Client Supabase singleton, creato pigramente al primo uso.
@@ -10,10 +13,10 @@ let client: SupabaseClient | null = null;
  * se la configurazione manca questa funzione non viene mai chiamata e l'utente
  * vede la schermata di configurazione invece di un crash.
  *
- * Dalla Milestone 2 il tipo generico verra' parametrizzato con i tipi generati
- * da `supabase gen types typescript` (spec §2.3).
+ * Tipizzato su `Database` (src/lib/supabase/database.types.ts), cosi' tabelle e
+ * colonne sono controllate dal compilatore (spec §2.3).
  */
-export function getSupabaseClient(): SupabaseClient {
+export function getSupabaseClient(): AppSupabaseClient {
   if (client) return client;
 
   const result = readEnv();
@@ -23,7 +26,7 @@ export function getSupabaseClient(): SupabaseClient {
     );
   }
 
-  client = createClient(result.env.supabaseUrl, result.env.supabaseAnonKey, {
+  client = createClient<Database>(result.env.supabaseUrl, result.env.supabaseAnonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
