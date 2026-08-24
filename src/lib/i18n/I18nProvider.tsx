@@ -9,7 +9,13 @@ import {
 } from '@/lib/i18n/types';
 
 const STORAGE_KEY = 'workout-diary.language';
-const FALLBACK: Language = 'it';
+
+/**
+ * Inglese, non italiano: chi non parla nessuna delle due lingue supportate ha
+ * molte piu' probabilita' di cavarsela in inglese. Un italiano viene comunque
+ * riconosciuto da `navigator.languages` e non arriva mai fin qui.
+ */
+const FALLBACK: Language = 'en';
 
 /** localStorage puo' lanciare in navigazione privata: la lingua non vale un crash. */
 function readStoredLanguage(): Language | null {
@@ -29,7 +35,7 @@ function storeLanguage(language: Language): void {
   }
 }
 
-/** Scelta esplicita → lingua del dispositivo → italiano. */
+/** Scelta esplicita → lingua del dispositivo → inglese. */
 function detectLanguage(): Language {
   const stored = readStoredLanguage();
   if (stored) return stored;

@@ -85,8 +85,12 @@ src/
 ### Localizzazione
 
 L'app è in italiano e in inglese. La lingua si sceglie dallo switcher IT/EN in
-alto; alla prima apertura segue quella del dispositivo (italiano come fallback)
-e poi resta memorizzata.
+alto; alla prima apertura segue quella del dispositivo e poi resta memorizzata.
+
+L'ordine è: scelta esplicita → lingua del dispositivo → **inglese**. Il fallback
+è l'inglese e non l'italiano perché serve a chi non parla nessuna delle due
+lingue supportate; un dispositivo in italiano viene riconosciuto prima e non ci
+arriva mai.
 
 `src/lib/i18n/locales/it.ts` è il locale di riferimento: le sue chiavi generano
 il tipo `TranslationKey`, su cui `en.ts` è tipizzato. **Una stringa aggiunta solo

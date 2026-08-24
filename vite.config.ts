@@ -21,8 +21,11 @@ export default defineConfig({
         id: '/',
         name: 'Workout Diary',
         short_name: 'Workout',
-        description: 'Diario di allenamento calisthenics: registra le sessioni e guarda i progressi.',
-        lang: 'it',
+        description: 'Calisthenics workout diary: log your sessions and track your progress.',
+        // Il manifest ha una lingua sola, e chi lo legge (prompt di
+        // installazione, launcher) non sa che lingua parla l'utente: vale la
+        // stessa scelta del fallback dell'app.
+        lang: 'en',
         // Nessun `orientation`: il cover display del Razr 50 e' quasi quadrato,
         // bloccare l'orientamento peggiorerebbe il flusso di logging (spec §2.5).
         start_url: '/',
