@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { TriangleAlert } from 'lucide-react';
 import { AppShell, ThumbSpacer } from '@/components/AppShell';
 import { FullScreenLoader } from '@/components/FullScreenLoader';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import { useAuth } from '@/features/auth/useAuth';
 
 /**
@@ -27,6 +28,7 @@ function readAuthErrorFromUrl(): string | null {
 
 export function AuthCallbackPage() {
   const { status } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [urlError] = useState<string | null>(readAuthErrorFromUrl);
 
@@ -36,7 +38,7 @@ export function AuthCallbackPage() {
     }
   }, [status, navigate]);
 
-  if (status === 'loading') return <FullScreenLoader label="Ti sto facendo entrare…" />;
+  if (status === 'loading') return <FullScreenLoader label={t('callback.signingIn')} />;
 
   if (status === 'anonymous') {
     return (
@@ -45,18 +47,18 @@ export function AuthCallbackPage() {
           <ThumbSpacer />
           <div className="space-y-4">
             <TriangleAlert aria-hidden className="size-8 text-amber-400" />
-            <h1 className="text-xl font-semibold">Accesso non riuscito</h1>
+            <h1 className="text-xl font-semibold">{t('callback.failedTitle')}</h1>
+            {/* `urlError` arriva da Supabase ed e' sempre in inglese: e' un
+                dettaglio diagnostico, non una frase dell'interfaccia. */}
             <p className="text-sm leading-relaxed text-slate-400">
-              {urlError ?? 'Il link non è più valido: è scaduto oppure era già stato usato.'}
+              {urlError ?? t('callback.invalidLink')}
             </p>
-            <p className="text-sm leading-relaxed text-slate-500">
-              Ogni magic link vale una volta sola. Richiedine uno nuovo.
-            </p>
+            <p className="text-sm leading-relaxed text-slate-500">{t('callback.oneTimeUse')}</p>
             <Link
               to="/login"
               className="tap-target flex items-center justify-center rounded-xl bg-amber-500 px-4 py-3 text-base font-semibold text-slate-950 hover:bg-amber-400"
             >
-              Torna al login
+              {t('callback.backToLogin')}
             </Link>
           </div>
         </main>
@@ -64,5 +66,5 @@ export function AuthCallbackPage() {
     );
   }
 
-  return <FullScreenLoader label="Ti sto facendo entrare…" />;
+  return <FullScreenLoader label={t('callback.signingIn')} />;
 }

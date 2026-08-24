@@ -1,6 +1,6 @@
 import type { Exercise } from '@/domain/types';
 import { getSupabaseClient } from '@/lib/supabase/client';
-import { toDisplayMessage } from '@/lib/supabase/errors';
+import { toAppError } from '@/lib/supabase/errors';
 import { toExercise } from '@/lib/supabase/mappers';
 
 /**
@@ -18,7 +18,7 @@ export async function listExercises(): Promise<Exercise[]> {
     .order('category', { ascending: true })
     .order('name', { ascending: true });
 
-  if (error) throw new Error(toDisplayMessage(error, 'Lettura del catalogo esercizi'));
+  if (error) throw toAppError(error, 'error.exercises.load');
 
   return data.map(toExercise);
 }

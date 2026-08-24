@@ -2,12 +2,18 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Exercise } from '@/domain/types';
 import { listExercises } from '@/features/exercises/exercisesRepository';
 
+/**
+ * L'errore viaggia come oggetto, non come frase: la traduzione avviene nella
+ * vista, cosi' cambiare lingua ridipinge anche i messaggi di errore gia' a
+ * schermo invece di lasciarli congelati nella lingua in cui sono nati.
+ */
+
 export type LoadStatus = 'loading' | 'ready' | 'error';
 
 interface LoadState {
   status: LoadStatus;
   exercises: Exercise[];
-  error: string | null;
+  error: unknown;
 }
 
 export interface ExercisesState extends LoadState {
@@ -43,11 +49,7 @@ export function useExercises(): ExercisesState {
       })
       .catch((cause: unknown) => {
         if (!active) return;
-        setState({
-          status: 'error',
-          exercises: [],
-          error: cause instanceof Error ? cause.message : 'Caricamento non riuscito.',
-        });
+        setState({ status: 'error', exercises: [], error: cause });
       });
 
     return () => {

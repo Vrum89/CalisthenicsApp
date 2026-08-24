@@ -11,18 +11,24 @@
  * Se serve un comportamento nuovo per metrica, si aggiunge un campo qui.
  *
  * Aggiungere una metrica = aggiungere una entry a METRIC_CONFIG, e basta.
+ *
+ * Deviazione dallo spec: `label`, `unit` e `caption` sono chiavi di traduzione,
+ * non stringhe. L'app e' bilingue (IT/EN) e una stringa italiana incastonata qui
+ * avrebbe reso il registro l'unico punto non traducibile. `formatValue` riceve
+ * l'unita' gia' risolta, cosi' resta una funzione pura del numero.
  */
 
+import type { TranslateFn, TranslationKey } from '@/lib/i18n/types';
 import type { MetricType } from '@/domain/types';
 
 export interface MetricConfig {
-  label: string; // etichetta UI (IT ammesso)
-  unit: string; // es. "reps", "min", "s"
+  labelKey: TranslationKey; // etichetta UI
+  unitKey: TranslationKey; // es. "rip", "min", "s"
   inputKind: 'set-checkboxes' | 'number' | 'stopwatch' | 'text';
   higherIsBetter: boolean; // true → best = max; false → best = min (time)
-  formatValue: (value: number) => string; // es. mm:ss per 'time'
+  formatValue: (value: number, unit: string) => string; // es. mm:ss per 'time'
   deriveValue?: (repsPerSet: number[]) => number; // per 'sets': somma
-  caption: string;
+  captionKey: TranslationKey;
   chartKind: 'bars-plus-weight-line' | 'line' | 'none';
 }
 
@@ -34,58 +40,66 @@ function formatSeconds(value: number): string {
   return `${String(minutes)}:${String(seconds).padStart(2, '0')}`;
 }
 
+function plainNumber(value: number): string {
+  return String(value);
+}
+
+function numberWithUnit(value: number, unit: string): string {
+  return `${String(value)} ${unit}`;
+}
+
 function sum(values: number[]): number {
   return values.reduce((total, value) => total + value, 0);
 }
 
 export const METRIC_CONFIG: Record<MetricType, MetricConfig> = {
   sets: {
-    label: 'Serie',
-    unit: 'reps',
+    labelKey: 'metric.sets.label',
+    unitKey: 'metric.unit.reps',
     inputKind: 'set-checkboxes',
     higherIsBetter: true,
-    formatValue: (value) => String(value),
+    formatValue: plainNumber,
     deriveValue: sum,
-    caption: 'Barre: ripetizioni totali · linea azzurra: zavorra (kg)',
+    captionKey: 'metric.sets.caption',
     chartKind: 'bars-plus-weight-line',
   },
   reps: {
-    label: 'Ripetizioni',
-    unit: 'reps',
+    labelKey: 'metric.reps.label',
+    unitKey: 'metric.unit.reps',
     inputKind: 'number',
     higherIsBetter: true,
-    formatValue: (value) => String(value),
-    caption: 'Ripetizioni completate — più in alto è meglio',
+    formatValue: plainNumber,
+    captionKey: 'metric.reps.caption',
     chartKind: 'line',
   },
   minutes: {
-    label: 'Minuti',
-    unit: 'min',
+    labelKey: 'metric.minutes.label',
+    unitKey: 'metric.unit.minutes',
     inputKind: 'number',
     higherIsBetter: true,
-    formatValue: (value) => `${String(value)} min`,
-    caption: 'Durata EMOM in minuti — più in alto è meglio',
+    formatValue: numberWithUnit,
+    captionKey: 'metric.minutes.caption',
     chartKind: 'line',
   },
   time: {
-    label: 'Tempo',
-    unit: 's',
+    labelKey: 'metric.time.label',
+    unitKey: 'metric.unit.seconds',
     inputKind: 'stopwatch',
     higherIsBetter: false,
     formatValue: formatSeconds,
-    caption: 'Tempo totale — più in basso è meglio',
+    captionKey: 'metric.time.caption',
     chartKind: 'line',
   },
   note: {
     // `higherIsBetter` non ha significato per una nota: non c'è niente da
     // ordinare. Il valore qui non viene mai letto, perché `isComparable` è false
     // per chartKind 'none' e blocca best/trend a monte.
-    label: 'Nota',
-    unit: '',
+    labelKey: 'metric.note.label',
+    unitKey: 'metric.unit.none',
     inputKind: 'text',
     higherIsBetter: true,
-    formatValue: (value) => String(value),
-    caption: 'Voce descrittiva, senza valore numerico',
+    formatValue: plainNumber,
+    captionKey: 'metric.note.caption',
     chartKind: 'none',
   },
 };
@@ -97,9 +111,26 @@ export function metricConfig(metricType: MetricType): MetricConfig {
 /** Placeholder unico per "nessun valore", allineato al prototipo. */
 export const EMPTY_VALUE = '—';
 
-export function formatMetricValue(metricType: MetricType, value: number | null): string {
+export function metricLabel(t: TranslateFn, metricType: MetricType): string {
+  return t(metricConfig(metricType).labelKey);
+}
+
+export function metricUnit(t: TranslateFn, metricType: MetricType): string {
+  return t(metricConfig(metricType).unitKey);
+}
+
+export function metricCaption(t: TranslateFn, metricType: MetricType): string {
+  return t(metricConfig(metricType).captionKey);
+}
+
+export function formatMetricValue(
+  t: TranslateFn,
+  metricType: MetricType,
+  value: number | null,
+): string {
   if (value === null) return EMPTY_VALUE;
-  return metricConfig(metricType).formatValue(value);
+  const config = metricConfig(metricType);
+  return config.formatValue(value, t(config.unitKey));
 }
 
 /**
@@ -135,9 +166,7 @@ export function bestValue(metricType: MetricType, values: readonly number[]): nu
 /** True se `candidate` è un risultato migliore di `reference` per questa metrica. */
 export function isBetter(metricType: MetricType, candidate: number, reference: number): boolean {
   if (!isComparable(metricType)) return false;
-  return metricConfig(metricType).higherIsBetter
-    ? candidate > reference
-    : candidate < reference;
+  return metricConfig(metricType).higherIsBetter ? candidate > reference : candidate < reference;
 }
 
 /**
