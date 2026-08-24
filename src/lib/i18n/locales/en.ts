@@ -45,6 +45,13 @@ export const en: Record<TranslationKey, string> = {
   'home.catalogEmpty':
     'The catalogue is empty. Run the final part of supabase/schema.sql, which inserts the default exercises.',
 
+  'category.strength_sets': 'Strength (sets × reps)',
+  'category.max_reps_10min': 'Max reps (10 min)',
+  'category.time_circuits': 'Timed circuits',
+  'category.max_effort': 'Max effort',
+  'category.running': 'Running',
+  'category.other': 'Other',
+
   'metric.sets.label': 'Sets',
   'metric.sets.caption': 'Bars: total reps · blue line: added weight (kg)',
   'metric.reps.label': 'Reps',

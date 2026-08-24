@@ -2,15 +2,22 @@ import { useState } from 'react';
 import { Dumbbell, LoaderCircle, LogOut, RefreshCw, TriangleAlert } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { categoryLabel, compareCategories } from '@/domain/categories';
 import { metricLabel } from '@/domain/metrics';
 import type { Exercise } from '@/domain/types';
 import { describeError } from '@/lib/errors';
+import type { TranslateFn } from '@/lib/i18n/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { useExercises } from '@/features/exercises/useExercises';
 import { useAuth } from '@/features/auth/useAuth';
 
-/** Raggruppa per categoria conservando l'ordine gia' deciso dalla query. */
-function groupByCategory(exercises: readonly Exercise[]): [string, Exercise[]][] {
+/**
+ * Raggruppa per categoria, nell'ordine dichiarato dal dominio.
+ *
+ * L'ordinamento non puo' arrivare dalla query: il database vede solo le chiavi
+ * (`strength_sets`, `max_effort`) e non sa in che ordine vanno mostrate.
+ */
+function groupByCategory(t: TranslateFn, exercises: readonly Exercise[]): [string, Exercise[]][] {
   const groups = new Map<string, Exercise[]>();
   for (const exercise of exercises) {
     const bucket = groups.get(exercise.category);
@@ -20,7 +27,7 @@ function groupByCategory(exercises: readonly Exercise[]): [string, Exercise[]][]
       groups.set(exercise.category, [exercise]);
     }
   }
-  return [...groups];
+  return [...groups].sort(([a], [b]) => compareCategories(t, a, b));
 }
 
 function CatalogSection() {
@@ -61,12 +68,12 @@ function CatalogSection() {
 
   return (
     <div className="space-y-4">
-      {groupByCategory(exercises).map(([category, items]) => (
+      {groupByCategory(t, exercises).map(([category, items]) => (
         <section key={category}>
-          {/* Nome e categoria sono dati dell'utente, non stringhe dell'interfaccia:
-              restano come li ha scritti lui, in qualunque lingua sia l'app. */}
+          {/* La categoria e' una chiave tradotta; il nome dell'esercizio no,
+              quello e' un dato dell'utente e resta come l'ha scritto. */}
           <h3 className="text-xs font-medium tracking-wider text-slate-500 uppercase">
-            {category}
+            {categoryLabel(t, category)}
           </h3>
           <ul className="mt-2 divide-y divide-slate-800 rounded-xl border border-slate-800">
             {items.map((exercise) => (

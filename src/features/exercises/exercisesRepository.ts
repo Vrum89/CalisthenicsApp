@@ -15,7 +15,8 @@ export async function listExercises(): Promise<Exercise[]> {
     .from('exercises')
     .select('*')
     .eq('is_active', true)
-    .order('category', { ascending: true })
+    // Solo il nome: l'ordine delle categorie non è alfabetico ma quello
+    // dichiarato in `src/domain/categories.ts`, e il database non lo conosce.
     .order('name', { ascending: true });
 
   if (error) throw toAppError(error, 'error.exercises.load');

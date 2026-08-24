@@ -31,7 +31,7 @@ Env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. **Mai committare segreti**; 
 - **`src/lib/i18n/locales/it.ts` è il locale di riferimento**: le sue chiavi definiscono `TranslationKey`, e `en.ts` è tipizzato su quello. Aggiungere una stringa solo in italiano **rompe il build** — è voluto.
 - **Gli errori viaggiano come `AppError` con una chiave**, non come frase già scritta: il livello dati non conosce la lingua. La vista traduce con `describeError(error, t)`. Così cambiare lingua ridipinge anche gli errori già a schermo.
 - **Il registro metriche espone `labelKey`/`unitKey`/`captionKey`**, non stringhe. Resta l'unica fonte della semantica: dice *quale* etichetta, l'i18n dice *come si scrive*.
-- **I dati dell'utente non si traducono**: nomi esercizi, categorie, note e varianti restano come sono stati scritti. Si traduce solo il chrome dell'app.
+- **I dati dell'utente non si traducono**: nomi esercizi, note e varianti restano come sono stati scritti. **Eccezione: `category`**, che nel DB contiene una chiave neutra (`strength_sets`, non "Forza") tradotta a video da `src/domain/categories.ts`. Una chiave sconosciuta si mostra grezza, non fa errore.
 - Testa entrambe le lingue: l'inglese è mediamente più corto, l'italiano più lungo — è l'italiano che fa scoppiare i layout a 360 px.
 
 ## Metodo di lavoro

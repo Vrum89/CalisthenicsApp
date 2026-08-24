@@ -50,6 +50,13 @@ export const it = {
   'home.catalogEmpty':
     'Il catalogo è vuoto. Esegui la parte finale di supabase/schema.sql, che inserisce gli esercizi di default.',
 
+  'category.strength_sets': 'Forza (serie × rip)',
+  'category.max_reps_10min': 'Max ripetizioni (10 min)',
+  'category.time_circuits': 'Circuiti a tempo',
+  'category.max_effort': 'Massimali',
+  'category.running': 'Corsa',
+  'category.other': 'Altro',
+
   'metric.sets.label': 'Serie',
   'metric.sets.caption': 'Barre: ripetizioni totali · linea azzurra: zavorra (kg)',
   'metric.reps.label': 'Ripetizioni',

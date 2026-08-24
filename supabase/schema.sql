@@ -188,6 +188,11 @@ grant select, insert, update, delete on
 -- I nomi sono la forma canonica del catalogo: nome semplice per gli esercizi a
 -- serie, qualificatore fra parentesi quando cambia la metrica ("Pull up (10 min)").
 -- La migrazione dei dati storici (§8) mappera' i vecchi nomi su questi.
+--
+-- `category` contiene una CHIAVE neutra rispetto alla lingua, non un'etichetta:
+-- l'app e' bilingue e traduce la chiave al momento di mostrarla
+-- (src/domain/categories.ts). Nessun CHECK sulla colonna: una chiave
+-- sconosciuta viene mostrata cosi' com'e', non fa fallire una schermata.
 -- -----------------------------------------------------------------------------
 
 create or replace function public.seed_default_exercises(target_user uuid)
@@ -202,33 +207,33 @@ begin
   insert into exercises (user_id, name, category, metric_type)
   values
     -- Forza a serie (metrica 'sets': checkbox per serie, totale derivato)
-    (target_user, 'Chin up',                    'Forza (serie × rip)',      'sets'),
-    (target_user, 'Pull up',                    'Forza (serie × rip)',      'sets'),
-    (target_user, 'Dip',                        'Forza (serie × rip)',      'sets'),
-    (target_user, 'Piegamenti',                 'Forza (serie × rip)',      'sets'),
-    (target_user, 'Hand stand push up',         'Forza (serie × rip)',      'sets'),
-    (target_user, 'Chin up EMOM',               'Forza (serie × rip)',      'minutes'),
+    (target_user, 'Chin up',                     'strength_sets',  'sets'),
+    (target_user, 'Pull up',                     'strength_sets',  'sets'),
+    (target_user, 'Dip',                         'strength_sets',  'sets'),
+    (target_user, 'Piegamenti',                  'strength_sets',  'sets'),
+    (target_user, 'Hand stand push up',          'strength_sets',  'sets'),
+    (target_user, 'Chin up EMOM',                'strength_sets',  'minutes'),
 
     -- Max ripetizioni in 10 minuti (metrica 'reps': un numero solo)
-    (target_user, 'Pull up (10 min)',           'Max ripetizioni (10 min)', 'reps'),
-    (target_user, 'Chin up (10 min)',           'Max ripetizioni (10 min)', 'reps'),
-    (target_user, 'Dip (10 min)',               'Max ripetizioni (10 min)', 'reps'),
-    (target_user, 'Dip anelli (10 min)',        'Max ripetizioni (10 min)', 'reps'),
-    (target_user, 'Hand stand push up (10 min)','Max ripetizioni (10 min)', 'reps'),
-    (target_user, 'V push up (10 min)',         'Max ripetizioni (10 min)', 'reps'),
+    (target_user, 'Pull up (10 min)',            'max_reps_10min', 'reps'),
+    (target_user, 'Chin up (10 min)',            'max_reps_10min', 'reps'),
+    (target_user, 'Dip (10 min)',                'max_reps_10min', 'reps'),
+    (target_user, 'Dip anelli (10 min)',         'max_reps_10min', 'reps'),
+    (target_user, 'Hand stand push up (10 min)', 'max_reps_10min', 'reps'),
+    (target_user, 'V push up (10 min)',          'max_reps_10min', 'reps'),
 
     -- Massimali (metrica 'reps': ripetizioni del massimale)
-    (target_user, 'Massimale: Pull up',         'Massimali',                'reps'),
-    (target_user, 'Massimale: Chin up',         'Massimali',                'reps'),
-    (target_user, 'Massimale: Dip',             'Massimali',                'reps'),
-    (target_user, 'Massimale: Hand stand push up', 'Massimali',             'reps'),
-    (target_user, 'Massimale: Piegamenti',      'Massimali',                'reps'),
+    (target_user, 'Massimale: Pull up',          'max_effort',     'reps'),
+    (target_user, 'Massimale: Chin up',          'max_effort',     'reps'),
+    (target_user, 'Massimale: Dip',              'max_effort',     'reps'),
+    (target_user, 'Massimale: Hand stand push up', 'max_effort',   'reps'),
+    (target_user, 'Massimale: Piegamenti',       'max_effort',     'reps'),
 
     -- Corsa (metrica 'time': cronometro, piu' basso e' meglio)
-    (target_user, 'Corsa 1 km',                 'Corsa',                    'time'),
+    (target_user, 'Corsa 1 km',                  'running',        'time'),
 
     -- Altro (metrica 'note': testo libero, niente grafico)
-    (target_user, 'Nota libera',                'Altro',                    'note')
+    (target_user, 'Nota libera',                 'other',          'note')
   on conflict (user_id, name) do nothing;
 
   get diagnostics inserted = row_count;
@@ -260,3 +265,18 @@ create trigger on_auth_user_created
 -- Backfill: il trigger vale solo da adesso in poi, e l'utente creato durante la
 -- Milestone 1 esiste gia'. Idempotente grazie a ON CONFLICT DO NOTHING.
 select public.seed_default_exercises(id) from auth.users;
+
+-- Normalizzazione: le prime versioni del seed scrivevano l'etichetta italiana
+-- nella colonna `category` invece della chiave. Converte le righe gia' esistenti.
+-- Idempotente: alla seconda esecuzione nessuna riga corrisponde piu'.
+update exercises as e
+set category = mapping.key
+from (values
+  ('Forza (serie × rip)',      'strength_sets'),
+  ('Max ripetizioni (10 min)', 'max_reps_10min'),
+  ('Circuiti a tempo',         'time_circuits'),
+  ('Massimali',                'max_effort'),
+  ('Corsa',                    'running'),
+  ('Altro',                    'other')
+) as mapping(label, key)
+where e.category = mapping.label;

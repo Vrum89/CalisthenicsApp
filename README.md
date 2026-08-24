@@ -93,8 +93,11 @@ il tipo `TranslationKey`, su cui `en.ts` è tipizzato. **Una stringa aggiunta so
 in italiano fa fallire il build**, invece di comparire come chiave grezza a
 schermo.
 
-I dati dell'utente (nomi degli esercizi, categorie, note) non vengono tradotti:
-restano come sono stati scritti.
+I dati dell'utente (nomi degli esercizi, note, varianti) non vengono tradotti:
+restano come sono stati scritti. Le **categorie** sono l'eccezione: nel database
+contengono una chiave neutra (`strength_sets`, non "Forza"), tradotta a video da
+`src/domain/categories.ts`. Una chiave non riconosciuta viene mostrata così
+com'è, senza errori.
 
 Tre regole che vale la pena non violare:
 
