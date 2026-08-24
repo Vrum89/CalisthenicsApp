@@ -30,6 +30,13 @@ export default defineConfig({
         display: 'standalone',
         background_color: '#0f172a', // slate-900
         theme_color: '#0f172a',
+        // Su Android chiede al sistema di aprire i link dell'app dentro l'app
+        // installata invece che nel browser: e' cio' che serve al ritorno dal
+        // magic link. Il primo salto resta sul dominio Supabase, quindi parte
+        // comunque dal browser, ma l'atterraggio finale torna nella PWA.
+        handle_links: 'preferred',
+        // Riusa la finestra gia' aperta invece di aprirne una seconda.
+        launch_handler: { client_mode: 'navigate-existing' },
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
