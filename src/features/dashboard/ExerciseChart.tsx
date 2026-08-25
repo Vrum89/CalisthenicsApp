@@ -13,7 +13,7 @@ import {
 import { formatMetricTick, formatMetricValue, metricCaption, metricConfig } from '@/domain/metrics';
 import type { HistoryPoint } from '@/domain/stats';
 import type { MetricType } from '@/domain/types';
-import { formatDate, formatShortDate } from '@/lib/dates';
+import { formatAxisDate, formatDate } from '@/lib/dates';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
 const AMBER = '#fbbf24';
@@ -88,7 +88,7 @@ export function ExerciseChart({
 
   const data: ChartPoint[] = points.map((point) => ({
     entryId: point.entry.id,
-    label: formatShortDate(point.date),
+    label: formatAxisDate(language, point.date),
     full:
       formatDate(language, point.date) +
       (point.originalDate

@@ -13,7 +13,7 @@ import { ChevronLeft, LoaderCircle, TriangleAlert } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { AppError, describeError } from '@/lib/errors';
-import { formatDate, formatShortDate, todayIso } from '@/lib/dates';
+import { formatAxisDate, formatCompactDate, formatDate, todayIso } from '@/lib/dates';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { useAuth } from '@/features/auth/useAuth';
 import { addBodyWeight } from '@/features/bodyWeight/bodyWeightRepository';
@@ -104,7 +104,7 @@ export function BodyWeightPage() {
 
   const entries = query.data;
   const chartData: WeightPoint[] = entries.map((entry) => ({
-    label: formatShortDate(entry.measuredOn),
+    label: formatAxisDate(language, entry.measuredOn),
     full: formatDate(language, entry.measuredOn),
     weight: entry.weightKg,
     notes: entry.notes,
@@ -274,7 +274,7 @@ export function BodyWeightPage() {
               {[...entries].reverse().map((entry) => (
                 <li key={entry.id} className="flex items-baseline gap-3 px-3 py-2.5">
                   <span className="text-sm text-slate-400 tabular-nums">
-                    {formatDate(language, entry.measuredOn)}
+                    {formatCompactDate(language, entry.measuredOn)}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-xs text-slate-500">
                     {entry.notes}
