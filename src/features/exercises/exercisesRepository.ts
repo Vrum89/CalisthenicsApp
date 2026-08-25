@@ -45,3 +45,17 @@ export async function createExercise(exercise: NewExercise): Promise<Exercise> {
   if (error) throw toAppError(error, 'error.exercises.create');
   return toExercise(data);
 }
+
+/**
+ * Elimina un esercizio dal catalogo.
+ *
+ * Vale solo per gli esercizi mai usati: la chiave esterna da `workout_exercises`
+ * blocca gli altri, e fa bene — cancellare un esercizio usato vorrebbe dire
+ * cancellare gli allenamenti in cui compare. L'app lo sa gia' dallo storico e
+ * non offre nemmeno il comando; questo e' il caso in cui lo storico in memoria
+ * fosse indietro rispetto al database, e allora decide il database.
+ */
+export async function deleteExercise(id: string): Promise<void> {
+  const { error } = await getSupabaseClient().from('exercises').delete().eq('id', id);
+  if (error) throw toAppError(error, 'error.exercises.delete');
+}

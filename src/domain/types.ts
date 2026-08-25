@@ -19,6 +19,12 @@ export interface Exercise {
   category: string;
   metricType: MetricType;
   isActive: boolean;
+  /**
+   * Durata della finestra a tempo, in secondi. `null` = quella di default della
+   * metrica (registro metriche): un "max ripetizioni" e' su 10 minuti finche'
+   * non si dice altro.
+   */
+  windowSeconds: number | null;
   createdAt: string; // ISO timestamp
 }
 

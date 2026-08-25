@@ -12,15 +12,20 @@ import { AppShell } from '@/components/AppShell';
 import { AppError, describeError } from '@/lib/errors';
 import { todayIso } from '@/lib/dates';
 import { useTranslation } from '@/lib/i18n/useTranslation';
-import type { WorkoutType } from '@/domain/types';
+import type { Exercise, WorkoutType } from '@/domain/types';
 import { useAuth } from '@/features/auth/useAuth';
-import { createExercise } from '@/features/exercises/exercisesRepository';
+import { createExercise, deleteExercise } from '@/features/exercises/exercisesRepository';
 import { useExercises } from '@/features/exercises/useExercises';
 import { useWorkoutHistory } from '@/features/history/useWorkoutHistory';
 import { draftEntryFor, filledEntries } from '@/features/logging/draft';
 import { ExerciseCard } from '@/features/logging/ExerciseCard';
 import { ExercisePicker } from '@/features/logging/ExercisePicker';
-import { knownVariants, lastPerformances } from '@/features/logging/lastPerformance';
+import {
+  exerciseUsage,
+  knownSchemes,
+  knownVariants,
+  lastPerformances,
+} from '@/features/logging/lastPerformance';
 import type { NewExerciseDraft } from '@/features/logging/NewExerciseForm';
 import { RestTimerBar } from '@/features/logging/RestTimerBar';
 import { WorkoutDateField } from '@/features/logging/WorkoutDateField';
@@ -66,6 +71,8 @@ export function LogPage() {
   const entries = draft.entries;
   const performances = lastPerformances(history.data);
   const variantsByExercise = knownVariants(history.data);
+  const schemesByExercise = knownSchemes(history.data);
+  const usageByExercise = exerciseUsage(history.data);
 
   // L'indice si tiene dentro i bordi qui, non a ogni rimozione: cosi' non c'e'
   // un istante in cui punta a una voce che non esiste piu'.
@@ -82,6 +89,16 @@ export function LogPage() {
     setSaved(false);
     // Il catalogo si ricarica dopo: l'esercizio e' gia' nella bozza, e
     // aspettare la lista completa terrebbe fermo chi si sta allenando.
+    exercises.reload();
+  }
+
+  async function handleDeleteExercise(exercise: Exercise) {
+    await deleteExercise(exercise.id);
+    // Toglierlo anche dalla bozza: restare in una registrazione un esercizio
+    // che non esiste piu' vorrebbe dire fallire al salvataggio.
+    for (const entry of entries.filter((candidate) => candidate.exerciseId === exercise.id)) {
+      draftController.removeEntry(entry.id);
+    }
     exercises.reload();
   }
 
@@ -185,6 +202,7 @@ export function LogPage() {
                 draftController.removeEntry(current.id);
               }}
               variants={variantsByExercise.get(current.exerciseId) ?? []}
+              schemes={schemesByExercise.get(current.exerciseId) ?? []}
               onSetCompleted={() => {
                 timer.start(REST_MODE);
               }}
@@ -292,15 +310,17 @@ export function LogPage() {
         <ExercisePicker
           exercises={exercises.data}
           performances={performances}
-          onPick={(exercise) => {
-            draftController.addEntry(
-              draftEntryFor(exercise, performances.get(exercise.id)?.entry ?? null),
-            );
+          variants={variantsByExercise}
+          usage={usageByExercise}
+          onPick={(exercise, variant) => {
+            const entry = draftEntryFor(exercise, performances.get(exercise.id)?.entry ?? null);
+            draftController.addEntry(variant === undefined ? entry : { ...entry, variant });
             setFocus(entries.length);
             setPicking(false);
             setSaved(false);
           }}
           onCreate={handleCreateExercise}
+          onDelete={handleDeleteExercise}
           onClose={() => {
             setPicking(false);
           }}

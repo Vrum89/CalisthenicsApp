@@ -22,6 +22,14 @@ export function toAppError(error: PostgrestError, fallbackKey: TranslationKey): 
       return new AppError('error.db.permissions', `Insufficient privilege: ${error.message}`);
     case 'PGRST301': // JWT scaduto o assente
       return new AppError('error.db.expiredSession', `Expired session: ${error.message}`);
+    case '23503': // foreign_key_violation
+      // Si cancella un esercizio che compare in almeno un allenamento.
+      return new AppError('error.db.stillReferenced', `Still referenced: ${error.message}`);
+    case '23505': // unique_violation
+      // In pratica sempre `exercises_user_name_unique`: un esercizio con quel
+      // nome c'e' gia'. Il messaggio di Postgres e' corretto e inservibile —
+      // parla di chiavi e vincoli a chi sta cercando di allenarsi.
+      return new AppError('error.db.duplicateName', `Duplicate: ${error.message}`);
     default:
       return new AppError(fallbackKey, error.message, { detail: error.message });
   }

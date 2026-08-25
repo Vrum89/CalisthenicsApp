@@ -29,6 +29,15 @@ create table if not exists exercises (
   constraint exercises_user_name_unique unique (user_id, name)
 );
 
+-- Durata della finestra a tempo, in secondi (null = quella di default della
+-- metrica). Il registro metriche dice SE un esercizio si misura dentro una
+-- finestra e quanto dura di solito; questa colonna serve a chi la vuole diversa
+-- — un "max ripetizioni" da 8 minuti resta un "max ripetizioni".
+-- `add column if not exists`: la tabella sopra esiste gia' dalla M2, e un
+-- `create table if not exists` non l'avrebbe aggiornata.
+alter table exercises add column if not exists window_seconds int
+  check (window_seconds is null or window_seconds between 10 and 7200);
+
 -- PROGRAMS (schede)
 create table if not exists programs (
   id          uuid primary key default gen_random_uuid(),
