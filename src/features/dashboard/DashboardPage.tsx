@@ -11,6 +11,7 @@ import { describeError } from '@/lib/errors';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { useExercises } from '@/features/exercises/useExercises';
 import { useWorkoutHistory } from '@/features/history/useWorkoutHistory';
+import { deleteWorkoutEntry } from '@/features/logging/workoutRepository';
 import { CategoryTabs } from '@/features/dashboard/CategoryTabs';
 import { EntryList } from '@/features/dashboard/EntryList';
 import { ExerciseChart } from '@/features/dashboard/ExerciseChart';
@@ -225,6 +226,13 @@ export function DashboardPage() {
                           metricType={exercise.metricType}
                           selectedEntryId={selectedEntryId}
                           onSelect={selectEntry}
+                          onDelete={async (point) => {
+                            await deleteWorkoutEntry(point.entry.id, point.entry.workoutId);
+                            // La voce cancellata poteva essere quella evidenziata:
+                            // lasciarla selezionata punterebbe a un id che non esiste.
+                            selectEntry(null);
+                            historyQuery.reload();
+                          }}
                         />
                       </section>
                     </>

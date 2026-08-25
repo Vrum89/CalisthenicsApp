@@ -32,6 +32,15 @@ export interface TimerMode {
   readonly overtimeKey: TranslationKey;
   readonly presets: readonly number[];
   readonly seconds: number;
+  /**
+   * Se la durata scelta a mano in barra vince su `seconds` ai riavvii.
+   *
+   * Vale per il riposo: i preset sono una preferenza del momento, e ogni serie
+   * successiva deve ripartire da quella. NON vale per una finestra a tempo, dove
+   * `seconds` viene dal dato — l'EMOM dura quanto dice il numero, e cambiarlo da
+   * 12 a 10 deve cambiare anche il conto alla rovescia.
+   */
+  readonly keepManualDuration: boolean;
 }
 
 export const REST_MODE: TimerMode = {
@@ -39,6 +48,7 @@ export const REST_MODE: TimerMode = {
   overtimeKey: 'log.rest.overtime',
   presets: REST_PRESETS,
   seconds: DEFAULT_REST_SECONDS,
+  keepManualDuration: true,
 };
 
 export function windowMode(seconds: number): TimerMode {
@@ -47,6 +57,7 @@ export function windowMode(seconds: number): TimerMode {
     overtimeKey: 'log.window.over',
     presets: WINDOW_PRESETS,
     seconds,
+    keepManualDuration: false,
   };
 }
 
@@ -95,9 +106,15 @@ export function useRestTimer(): RestTimer {
       // Dentro il gesto: su iOS l'audio creato altrove nasce muto.
       primeAudio();
       beeped.current = false;
-      // Cambiando modo si riparte dalla durata di quel modo; restando sul
-      // riposo si tiene quella scelta a mano l'ultima volta.
-      const seconds = next && next.labelKey !== mode.labelKey ? next.seconds : duration;
+      // Il riposo riparte dalla durata scelta a mano finche' si resta sul
+      // riposo; una finestra riparte sempre dalla sua, che viene dal dato.
+      const sameMode = next !== undefined && next.labelKey === mode.labelKey;
+      const seconds =
+        next === undefined
+          ? duration
+          : next.keepManualDuration && sameMode
+            ? duration
+            : next.seconds;
       if (next) setMode(next);
       setDurationState(seconds);
       const tick = Date.now();

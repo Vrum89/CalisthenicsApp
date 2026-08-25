@@ -38,6 +38,11 @@ create table if not exists exercises (
 alter table exercises add column if not exists window_seconds int
   check (window_seconds is null or window_seconds between 10 and 7200);
 
+-- La categoria "max ripetizioni in 10 minuti" portava la durata nel nome, ma la
+-- finestra ora e' per-esercizio e puo' essere di 8 minuti come di 15. La chiave
+-- diventa generica; l'etichetta la traduce l'app (src/domain/categories.ts).
+update exercises set category = 'max_reps_window' where category = 'max_reps_10min';
+
 -- PROGRAMS (schede)
 create table if not exists programs (
   id          uuid primary key default gen_random_uuid(),
@@ -224,12 +229,12 @@ begin
     (target_user, 'Chin up EMOM',                'strength_sets',  'minutes'),
 
     -- Max ripetizioni in 10 minuti (metrica 'reps': un numero solo)
-    (target_user, 'Pull up (10 min)',            'max_reps_10min', 'reps'),
-    (target_user, 'Chin up (10 min)',            'max_reps_10min', 'reps'),
-    (target_user, 'Dip (10 min)',                'max_reps_10min', 'reps'),
-    (target_user, 'Dip anelli (10 min)',         'max_reps_10min', 'reps'),
-    (target_user, 'Hand stand push up (10 min)', 'max_reps_10min', 'reps'),
-    (target_user, 'V push up (10 min)',          'max_reps_10min', 'reps'),
+    (target_user, 'Pull up (10 min)',            'max_reps_window', 'reps'),
+    (target_user, 'Chin up (10 min)',            'max_reps_window', 'reps'),
+    (target_user, 'Dip (10 min)',                'max_reps_window', 'reps'),
+    (target_user, 'Dip anelli (10 min)',         'max_reps_window', 'reps'),
+    (target_user, 'Hand stand push up (10 min)', 'max_reps_window', 'reps'),
+    (target_user, 'V push up (10 min)',          'max_reps_window', 'reps'),
 
     -- Massimali (metrica 'reps': ripetizioni del massimale)
     (target_user, 'Massimale: Pull up',          'max_effort',     'reps'),
@@ -282,7 +287,7 @@ update exercises as e
 set category = mapping.key
 from (values
   ('Forza (serie × rip)',      'strength_sets'),
-  ('Max ripetizioni (10 min)', 'max_reps_10min'),
+  ('Max ripetizioni (10 min)', 'max_reps_window'),
   ('Circuiti a tempo',         'time_circuits'),
   ('Massimali',                'max_effort'),
   ('Corsa',                    'running'),
