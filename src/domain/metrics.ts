@@ -134,6 +134,15 @@ export function formatMetricValue(
 }
 
 /**
+ * Come `formatMetricValue`, ma senza unità: serve ai tick degli assi, dove
+ * l'unità è già detta dalla didascalia e ripeterla su ogni tacca è rumore.
+ * Resta qui e non nel grafico perché è pur sempre "come si scrive un valore".
+ */
+export function formatMetricTick(metricType: MetricType, value: number): string {
+  return metricConfig(metricType).formatValue(value, '').trim();
+}
+
+/**
  * Calcola `metricValue` dalle serie registrate. Per 'sets' è la somma di
  * repsPerSet; per le altre metriche il valore non è derivabile e va inserito.
  */
