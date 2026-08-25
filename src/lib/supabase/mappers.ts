@@ -81,6 +81,7 @@ export function toExercise(row: Tables<'exercises'>): Exercise {
     category: row.category,
     metricType: parseMetricType(row.metric_type),
     isActive: row.is_active,
+    windowSeconds: row.window_seconds,
     createdAt: row.created_at,
   };
 }
@@ -174,6 +175,7 @@ export function fromExercise(exercise: NewExercise): TablesInsert<'exercises'> {
     category: exercise.category,
     metric_type: exercise.metricType,
     is_active: exercise.isActive,
+    window_seconds: exercise.windowSeconds,
   };
 }
 

@@ -25,6 +25,7 @@ export interface Database {
           category: string;
           metric_type: string;
           is_active: boolean;
+          window_seconds: number | null;
           created_at: string;
         };
         Insert: {
@@ -34,6 +35,7 @@ export interface Database {
           category: string;
           metric_type: string;
           is_active?: boolean;
+          window_seconds?: number | null;
           created_at?: string;
         };
         Update: {
@@ -43,6 +45,7 @@ export interface Database {
           category?: string;
           metric_type?: string;
           is_active?: boolean;
+          window_seconds?: number | null;
           created_at?: string;
         };
         Relationships: [];

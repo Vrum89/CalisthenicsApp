@@ -31,10 +31,13 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
  */
 export function SetCheckboxes({
   entry,
+  schemes,
   onChange,
   onSetCompleted,
 }: {
   entry: DraftEntry;
+  /** Scheme gia' usati per questo esercizio, dal piu' recente. */
+  schemes: readonly string[];
   onChange: (change: (entry: DraftEntry) => DraftEntry) => void;
   /** Chiamata quando una serie viene spuntata: fa partire il rest timer. */
   onSetCompleted: () => void;
@@ -73,6 +76,7 @@ export function SetCheckboxes({
           inputMode="text"
           autoComplete="off"
           autoCapitalize="none"
+          list={schemes.length > 0 ? `schemes-${entry.id}` : undefined}
           value={entry.scheme}
           placeholder={t('log.schemePlaceholder')}
           onChange={(event) => {
@@ -81,6 +85,16 @@ export function SetCheckboxes({
           }}
           className="w-24 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-center text-sm text-slate-100 placeholder:text-slate-600"
         />
+        {/* Digitando "5" il browser filtra da solo su "5x5", "5x6"…: sono gli
+            scheme che hai gia' usato per QUESTO esercizio, non un elenco
+            inventato da noi. Il campo resta libero. */}
+        {schemes.length > 0 && (
+          <datalist id={`schemes-${entry.id}`}>
+            {schemes.map((scheme) => (
+              <option key={scheme} value={scheme} />
+            ))}
+          </datalist>
+        )}
         <span className="ml-auto text-sm text-slate-400 tabular-nums">
           {t('log.completedSets', { done: completed, total: entry.sets.length })}
         </span>

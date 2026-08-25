@@ -29,6 +29,8 @@ export interface DraftEntry {
   /** Copiato dal catalogo: la bozza deve restare leggibile da sola. */
   readonly name: string;
   readonly metricType: MetricType;
+  /** Durata della finestra a tempo dell'esercizio; `null` = default della metrica. */
+  readonly windowSeconds: number | null;
   readonly scheme: string;
   readonly sets: readonly DraftSet[];
   /** Metriche a numero singolo: `reps`, `minutes`, `time` (secondi). */
@@ -97,6 +99,7 @@ export function draftEntryFor(exercise: Exercise, last: WorkoutExercise | null):
     exerciseId: exercise.id,
     name: exercise.name,
     metricType: exercise.metricType,
+    windowSeconds: exercise.windowSeconds,
     scheme,
     sets: metricConfig(exercise.metricType).inputKind === 'set-checkboxes' ? sets : [],
     value: null,
@@ -182,13 +185,21 @@ export function entryValue(entry: DraftEntry): number | null {
 }
 
 /**
- * Lo scheme da salvare. In modalita' fissa e' il piano (`5x6` resta `5x6` anche
- * se una serie e' andata a 4: la dashboard mostra il piano, `repsPerSet` il
- * dettaglio); in modalita' aperta lo si descrive da cio' che si e' fatto.
+ * Lo scheme da salvare.
+ *
+ * Quello scritto a mano vince sempre, `5x6` o `piramide` che sia: e' una parola
+ * dell'utente sul proprio allenamento, e riscriverla in `progressive` perche'
+ * non corrisponde a `NxM` sarebbe come tradurgli le note. In modalita' fissa
+ * resta comunque il piano (`5x6` anche se una serie e' andata a 4: la dashboard
+ * mostra il piano, `repsPerSet` il dettaglio).
+ *
+ * `describeScheme` interviene solo quando il campo e' vuoto: li' non c'e' niente
+ * da rispettare, e leggere `3x5` da tre serie da cinque e' meglio del nulla.
  */
 export function entryScheme(entry: DraftEntry): string | null {
   if (metricConfig(entry.metricType).inputKind !== 'set-checkboxes') return null;
-  if (parseScheme(entry.scheme)) return entry.scheme;
+  const written = entry.scheme.trim();
+  if (written.length > 0) return written;
   return describeScheme(doneReps(entry));
 }
 
