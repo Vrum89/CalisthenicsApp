@@ -116,11 +116,17 @@ export const NAME_MAP: Readonly<Record<string, NameMapping>> = {
  * I superset storici non sono un esercizio: sono due esercizi legati (spec §8).
  * La riga "Superset 5 trazioni + 10 spinte x5" va quindi espansa in due.
  *
- * Il diario dice quali esercizi solo due volte su cinque ("dip" il 31/03,
- * "piegamenti" il 14/05). Le altre tre riportano solo il riposo. Il default e'
- * pull up + piegamenti perche' e' cio' che dicono sia la voce del 14/05 sia
- * tutti i superset del seed di luglio/agosto, che appartengono allo stesso
- * periodo di allenamento.
+ * Il diario nomina gli esercizi solo due volte su cinque, ma riporta SEMPRE il
+ * riposo, e il riposo distingue le due versioni:
+ *
+ *   1:30 → pull up + dip        il superset come e' concepito
+ *   2:00 → pull up + piegamenti la versione ridotta del periodo con la spalla
+ *                               dolorante, quando i dip non erano praticabili
+ *
+ * Le due righe che nominano gli esercizi lo confermano (31/03 "dip" con 1:30,
+ * 14/05 "piegamenti" con 2:00), e i superset del seed di luglio — piegamenti,
+ * riposo 2:00 — cadono nella stessa regola. Dedurre dal riposo invece che da
+ * un elenco di date rende la regola verificabile riga per riga.
  */
 export const SUPERSET_SOURCE_NAME = 'Superset 5 trazioni + 10 spinte x5';
 
@@ -129,7 +135,15 @@ export interface SupersetPlan {
   readonly members: readonly { readonly name: string; readonly repsPerRound: number }[];
 }
 
-export const DEFAULT_SUPERSET: SupersetPlan = {
+const PULL_PLUS_DIP: SupersetPlan = {
+  rounds: 5,
+  members: [
+    { name: 'Pull up', repsPerRound: 5 },
+    { name: 'Dip', repsPerRound: 10 },
+  ],
+};
+
+const PULL_PLUS_PIEGAMENTI: SupersetPlan = {
   rounds: 5,
   members: [
     { name: 'Pull up', repsPerRound: 5 },
@@ -137,13 +151,11 @@ export const DEFAULT_SUPERSET: SupersetPlan = {
   ],
 };
 
-/** Date in cui il diario dichiara esplicitamente esercizi diversi dal default. */
-export const SUPERSET_OVERRIDES: Readonly<Record<string, SupersetPlan>> = {
-  '2026-03-31': {
-    rounds: 5,
-    members: [
-      { name: 'Pull up', repsPerRound: 5 },
-      { name: 'Dip', repsPerRound: 10 },
-    ],
-  },
+/** Riposo annotato nel diario → composizione del superset. */
+export const SUPERSET_BY_REST: Readonly<Record<string, SupersetPlan>> = {
+  '1:30': PULL_PLUS_DIP,
+  '2:00': PULL_PLUS_PIEGAMENTI,
 };
+
+/** Usato solo se il riposo manca del tutto: e' il superset come e' concepito. */
+export const DEFAULT_SUPERSET: SupersetPlan = PULL_PLUS_DIP;

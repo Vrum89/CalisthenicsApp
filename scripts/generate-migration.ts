@@ -29,7 +29,7 @@ import {
   CATALOG,
   DEFAULT_SUPERSET,
   NAME_MAP,
-  SUPERSET_OVERRIDES,
+  SUPERSET_BY_REST,
   SUPERSET_SOURCE_NAME,
   type SupersetPlan,
 } from './catalog-mapping.ts';
@@ -178,8 +178,31 @@ function repsFromScheme(scheme: string | undefined): number[] | null {
   return Array.from({ length: sets }, () => reps);
 }
 
-function supersetPlanFor(date: string): SupersetPlan {
-  return SUPERSET_OVERRIDES[date] ?? DEFAULT_SUPERSET;
+interface ResolvedSuperset {
+  readonly plan: SupersetPlan;
+  /** Come si e' arrivati a questa composizione, da scrivere nelle note. */
+  readonly source: 'declared' | 'rest' | 'default';
+  readonly rest: string | null;
+}
+
+/**
+ * Composizione del superset: se il diario nomina gli esercizi si usano quelli,
+ * altrimenti la si deduce dal riposo annotato (vedi catalog-mapping.ts).
+ */
+function resolveSuperset(note: string | null): ResolvedSuperset {
+  const rest = note ? (/riposo\s+(\d+:\d{2})/i.exec(note)?.[1] ?? null) : null;
+  const plan = rest === null ? undefined : SUPERSET_BY_REST[rest];
+
+  const declared =
+    note !== null && /\bdip\b/i.test(note)
+      ? SUPERSET_BY_REST['1:30']
+      : note !== null && /piegamenti/i.test(note)
+        ? SUPERSET_BY_REST['2:00']
+        : undefined;
+
+  if (declared) return { plan: declared, source: 'declared', rest };
+  if (plan) return { plan, source: 'rest', rest };
+  return { plan: DEFAULT_SUPERSET, source: 'default', rest };
 }
 
 // --- costruzione degli allenamenti storici ----------------------------------
@@ -214,15 +237,24 @@ function buildFromPrototype(rows: readonly ProtoRow[]): WorkoutDraft[] {
 
       if (row.ex === SUPERSET_SOURCE_NAME) {
         // Espansione del superset in due esercizi distinti (spec §8).
-        const plan = supersetPlanFor(date);
+        const { plan, source, rest } = resolveSuperset(notes);
         const supersetKey = uuidV5(`superset:${date}`);
-        const explicit = date in SUPERSET_OVERRIDES;
-        const supersetNote = [
-          notes,
-          explicit
-            ? null
-            : 'Esercizi non dichiarati nel diario: assunti pull up + piegamenti.',
-        ]
+
+        if (source === 'default') {
+          warnings.push(
+            `${date}: superset senza esercizi ne' riposo annotati, usato il default ` +
+              `(${plan.members.map((m) => m.name).join(' + ')}).`,
+          );
+        }
+
+        const provenance =
+          source === 'rest'
+            ? `Esercizi non dichiarati nel diario: dedotti dal riposo di ${rest ?? ''}.`
+            : source === 'default'
+              ? 'Esercizi non dichiarati nel diario: usata la composizione abituale.'
+              : null;
+
+        const supersetNote = [notes, provenance]
           .filter((part): part is string => part !== null)
           .join(' · ');
 
