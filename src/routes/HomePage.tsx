@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChartLine, ChevronRight, Dumbbell, LogOut, Scale } from 'lucide-react';
+import { ChartLine, ChevronRight, CirclePlus, Dumbbell, LogOut, Scale } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -15,6 +15,14 @@ const DESTINATIONS: readonly {
   labelKey: TranslationKey;
   hintKey: TranslationKey;
 }[] = [
+  // Prima voce perche' e' quella che si tocca in palestra, di corsa: le altre
+  // due si aprono da fermi, sul display principale.
+  {
+    to: '/log',
+    icon: CirclePlus,
+    labelKey: 'nav.log',
+    hintKey: 'nav.logHint',
+  },
   {
     to: '/dashboard',
     icon: ChartLine,
@@ -29,10 +37,7 @@ const DESTINATIONS: readonly {
   },
 ];
 
-/**
- * Punto di partenza dell'app. Per ora smista verso progressi e peso; il flusso
- * di logging, che diventera' la voce principale, arriva con la Milestone 5.
- */
+/** Punto di partenza dell'app: registrazione, progressi, peso. */
 export function HomePage() {
   const { user, signOut } = useAuth();
   const { t } = useTranslation();
