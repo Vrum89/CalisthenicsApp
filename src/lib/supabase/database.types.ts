@@ -307,6 +307,11 @@ export interface Database {
         Args: { target_user: string };
         Returns: number;
       };
+      merge_exercises: {
+        Args: { source: string; target: string };
+        /** Quante registrazioni sono passate all'esercizio di destinazione. */
+        Returns: number;
+      };
     };
     Enums: Record<never, never>;
     CompositeTypes: Record<never, never>;

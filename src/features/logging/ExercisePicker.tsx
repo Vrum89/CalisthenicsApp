@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Copy, EllipsisVertical, LoaderCircle, Plus, Search, Trash2, X } from 'lucide-react';
+import { EllipsisVertical, Plus, Search, X } from 'lucide-react';
 import { categoryLabel, compareCategories } from '@/domain/categories';
 import type { Exercise } from '@/domain/types';
 import {
@@ -7,9 +7,8 @@ import {
   type ExerciseUsage,
   type LastPerformance,
 } from '@/features/logging/lastPerformance';
+import { ExerciseManager } from '@/features/logging/ExerciseManager';
 import { NewExerciseForm, type NewExerciseDraft } from '@/features/logging/NewExerciseForm';
-import { formatCompactDate } from '@/lib/dates';
-import { describeError } from '@/lib/errors';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
 /**
@@ -28,7 +27,11 @@ export function ExercisePicker({
   usage,
   onPick,
   onCreate,
+  onRename,
+  onMerge,
   onDelete,
+  onRenameVariant,
+  onClearVariant,
   onClose,
 }: {
   exercises: readonly Exercise[];
@@ -39,31 +42,20 @@ export function ExercisePicker({
   usage: ReadonlyMap<string, ExerciseUsage>;
   onPick: (exercise: Exercise, variant?: string) => void;
   onCreate: (draft: NewExerciseDraft) => Promise<void>;
+  onRename: (exercise: Exercise, name: string) => Promise<void>;
+  onMerge: (source: Exercise, target: Exercise) => Promise<void>;
   onDelete: (exercise: Exercise) => Promise<void>;
+  onRenameVariant: (exercise: Exercise, from: string, to: string) => Promise<void>;
+  onClearVariant: (exercise: Exercise, variant: string) => Promise<void>;
   onClose: () => void;
 }) {
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   // `null` = elenco; altrimenti sono i valori di partenza del form.
   const [creating, setCreating] = useState<(Partial<NewExerciseDraft> & { name: string }) | null>(
     null,
   );
-  const [menuFor, setMenuFor] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState<string | null>(null);
-  const [error, setError] = useState<unknown>(null);
-
-  async function handleDelete(exercise: Exercise) {
-    setError(null);
-    setDeleting(exercise.id);
-    try {
-      await onDelete(exercise);
-      setMenuFor(null);
-    } catch (cause) {
-      setError(cause);
-    } finally {
-      setDeleting(null);
-    }
-  }
+  const [managing, setManaging] = useState<Exercise | null>(null);
 
   const needle = query.trim().toLowerCase();
   /**
@@ -102,7 +94,40 @@ export function ExercisePicker({
           </button>
         </header>
 
-        {creating !== null ? (
+        {managing !== null ? (
+          <ExerciseManager
+            exercise={managing}
+            siblings={exercises.filter((other) => other.id !== managing.id)}
+            usage={usage.get(managing.id)}
+            variants={variants.get(managing.id) ?? []}
+            onRename={async (name) => {
+              await onRename(managing, name);
+              setManaging(null);
+            }}
+            onMerge={async (target) => {
+              await onMerge(managing, target);
+              setManaging(null);
+            }}
+            onDuplicate={() => {
+              setManaging(null);
+              setCreating({
+                name: t('log.copyName', { name: managing.name }),
+                category: managing.category,
+                metricType: managing.metricType,
+                windowSeconds: managing.windowSeconds,
+              });
+            }}
+            onDelete={async () => {
+              await onDelete(managing);
+              setManaging(null);
+            }}
+            onRenameVariant={(from, to) => onRenameVariant(managing, from, to)}
+            onClearVariant={(variant) => onClearVariant(managing, variant)}
+            onClose={() => {
+              setManaging(null);
+            }}
+          />
+        ) : creating !== null ? (
           <NewExerciseForm
             initial={creating}
             onCreate={onCreate}
@@ -158,10 +183,8 @@ export function ExercisePicker({
                       <button
                         type="button"
                         aria-label={t('log.manage')}
-                        aria-expanded={menuFor === exercise.id}
                         onClick={() => {
-                          setError(null);
-                          setMenuFor(menuFor === exercise.id ? null : exercise.id);
+                          setManaging(exercise);
                         }}
                         className="tap-target flex shrink-0 items-center justify-center rounded-lg text-slate-600 hover:text-slate-300"
                       >
@@ -192,63 +215,6 @@ export function ExercisePicker({
                       </ul>
                     )}
 
-                    {menuFor === exercise.id && (
-                      <div className="space-y-2 rounded-xl border border-slate-700 bg-slate-900/60 p-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMenuFor(null);
-                            setCreating({
-                              name: t('log.copyName', { name: exercise.name }),
-                              category: exercise.category,
-                              metricType: exercise.metricType,
-                              windowSeconds: exercise.windowSeconds,
-                            });
-                          }}
-                          className="tap-target flex w-full items-center gap-2 rounded-lg px-2 text-sm text-slate-200 hover:bg-slate-800"
-                        >
-                          <Copy aria-hidden className="size-4 shrink-0" />
-                          {t('log.duplicate')}
-                        </button>
-
-                        {/* Eliminabile solo se non compare in nessun
-                            allenamento: altrimenti si direbbe dove sta, invece
-                            di offrire un comando che il database rifiuterebbe. */}
-                        {usage.get(exercise.id) === undefined ? (
-                          <button
-                            type="button"
-                            disabled={deleting === exercise.id}
-                            onClick={() => {
-                              void handleDelete(exercise);
-                            }}
-                            className="tap-target flex w-full items-center gap-2 rounded-lg px-2 text-sm text-red-400 hover:bg-slate-800 disabled:opacity-50"
-                          >
-                            {deleting === exercise.id ? (
-                              <LoaderCircle aria-hidden className="size-4 shrink-0 animate-spin" />
-                            ) : (
-                              <Trash2 aria-hidden className="size-4 shrink-0" />
-                            )}
-                            {t('log.delete')}
-                          </button>
-                        ) : (
-                          <p className="px-2 text-xs leading-relaxed text-slate-500">
-                            {t('log.deleteBlocked', {
-                              count: usage.get(exercise.id)?.count ?? 0,
-                              date: formatCompactDate(
-                                language,
-                                usage.get(exercise.id)?.lastDate ?? '',
-                              ),
-                            })}
-                          </p>
-                        )}
-
-                        {error !== null && (
-                          <p role="alert" className="px-2 text-xs leading-relaxed text-red-400">
-                            {describeError(error, t)}
-                          </p>
-                        )}
-                      </div>
-                    )}
                   </li>
                 );
               })}

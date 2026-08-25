@@ -14,7 +14,13 @@ import { todayIso } from '@/lib/dates';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import type { Exercise, WorkoutType } from '@/domain/types';
 import { useAuth } from '@/features/auth/useAuth';
-import { createExercise, deleteExercise } from '@/features/exercises/exercisesRepository';
+import {
+  createExercise,
+  deleteExercise,
+  mergeExercises,
+  renameExercise,
+} from '@/features/exercises/exercisesRepository';
+import { clearVariant, renameVariant } from '@/features/exercises/variantsRepository';
 import { useExercises } from '@/features/exercises/useExercises';
 import { useWorkoutHistory } from '@/features/history/useWorkoutHistory';
 import { draftEntryFor, filledEntries } from '@/features/logging/draft';
@@ -100,6 +106,49 @@ export function LogPage() {
       draftController.removeEntry(entry.id);
     }
     exercises.reload();
+  }
+
+  /**
+   * Le manutenzioni del catalogo ricaricano sia il catalogo sia lo storico: una
+   * fusione sposta registrazioni, e la dashboard non deve restare col vecchio
+   * conteggio finche' non si ricarica la pagina.
+   */
+  async function refreshCatalog() {
+    exercises.reload();
+    history.reload();
+  }
+
+  async function handleRenameExercise(exercise: Exercise, name: string) {
+    await renameExercise(exercise.id, name);
+    // Il nome vive anche nella bozza, che deve restare leggibile da sola.
+    for (const entry of entries.filter((candidate) => candidate.exerciseId === exercise.id)) {
+      draftController.updateEntry(entry.id, (current) => ({ ...current, name }));
+    }
+    await refreshCatalog();
+  }
+
+  async function handleMergeExercises(source: Exercise, target: Exercise) {
+    await mergeExercises(source.id, target.id);
+    // Le voci in bozza puntano a un esercizio che non esiste piu': si spostano
+    // anche loro, o al salvataggio fallirebbero.
+    for (const entry of entries.filter((candidate) => candidate.exerciseId === source.id)) {
+      draftController.updateEntry(entry.id, (current) => ({
+        ...current,
+        exerciseId: target.id,
+        name: target.name,
+      }));
+    }
+    await refreshCatalog();
+  }
+
+  async function handleRenameVariant(exercise: Exercise, from: string, to: string) {
+    await renameVariant(exercise.id, from, to);
+    await refreshCatalog();
+  }
+
+  async function handleClearVariant(exercise: Exercise, variant: string) {
+    await clearVariant(exercise.id, variant);
+    await refreshCatalog();
   }
 
   async function handleSave() {
@@ -320,7 +369,11 @@ export function LogPage() {
             setSaved(false);
           }}
           onCreate={handleCreateExercise}
+          onRename={handleRenameExercise}
+          onMerge={handleMergeExercises}
           onDelete={handleDeleteExercise}
+          onRenameVariant={handleRenameVariant}
+          onClearVariant={handleClearVariant}
           onClose={() => {
             setPicking(false);
           }}

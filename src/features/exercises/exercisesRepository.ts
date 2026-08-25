@@ -55,6 +55,43 @@ export async function createExercise(exercise: NewExercise): Promise<Exercise> {
  * non offre nemmeno il comando; questo e' il caso in cui lo storico in memoria
  * fosse indietro rispetto al database, e allora decide il database.
  */
+/**
+ * Cambia il nome di un esercizio.
+ *
+ * Il nome e' l'unica cosa che si puo' correggere: categoria e metrica no —
+ * la seconda perche' reinterpreterebbe lo storico, la prima perche' non ne vale
+ * la complessita' finche' serve solo a raggruppare.
+ */
+export async function renameExercise(id: string, name: string): Promise<Exercise> {
+  const { data, error } = await getSupabaseClient()
+    .from('exercises')
+    .update({ name })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw toAppError(error, 'error.exercises.rename');
+  return toExercise(data);
+}
+
+/**
+ * Fonde `source` dentro `target`: le registrazioni passano al secondo e il primo
+ * sparisce. Restituisce quante voci sono state spostate.
+ *
+ * E' una funzione del database e non tre chiamate da qui perche' spostare le
+ * righe e cancellare l'esercizio devono riuscire o fallire insieme: a meta'
+ * strada resterebbe un esercizio vuoto, o righe orfane.
+ */
+export async function mergeExercises(sourceId: string, targetId: string): Promise<number> {
+  const { data, error } = await getSupabaseClient().rpc('merge_exercises', {
+    source: sourceId,
+    target: targetId,
+  });
+
+  if (error) throw toAppError(error, 'error.exercises.merge');
+  return data;
+}
+
 export async function deleteExercise(id: string): Promise<void> {
   const { error } = await getSupabaseClient().from('exercises').delete().eq('id', id);
   if (error) throw toAppError(error, 'error.exercises.delete');
