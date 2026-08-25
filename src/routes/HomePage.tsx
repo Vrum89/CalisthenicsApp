@@ -1,103 +1,37 @@
 import { useState } from 'react';
-import { Dumbbell, LoaderCircle, LogOut, RefreshCw, TriangleAlert } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ChartLine, ChevronRight, Dumbbell, LogOut, Scale } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { categoryLabel, compareCategories } from '@/domain/categories';
-import { metricLabel } from '@/domain/metrics';
-import type { Exercise } from '@/domain/types';
 import { describeError } from '@/lib/errors';
-import type { TranslateFn } from '@/lib/i18n/types';
+import type { TranslationKey } from '@/lib/i18n/types';
 import { useTranslation } from '@/lib/i18n/useTranslation';
-import { useExercises } from '@/features/exercises/useExercises';
 import { useAuth } from '@/features/auth/useAuth';
 
-/**
- * Raggruppa per categoria, nell'ordine dichiarato dal dominio.
- *
- * L'ordinamento non puo' arrivare dalla query: il database vede solo le chiavi
- * (`strength_sets`, `max_effort`) e non sa in che ordine vanno mostrate.
- */
-function groupByCategory(t: TranslateFn, exercises: readonly Exercise[]): [string, Exercise[]][] {
-  const groups = new Map<string, Exercise[]>();
-  for (const exercise of exercises) {
-    const bucket = groups.get(exercise.category);
-    if (bucket) {
-      bucket.push(exercise);
-    } else {
-      groups.set(exercise.category, [exercise]);
-    }
-  }
-  return [...groups].sort(([a], [b]) => compareCategories(t, a, b));
-}
-
-function CatalogSection() {
-  const { status, exercises, error, reload } = useExercises();
-  const { t } = useTranslation();
-
-  if (status === 'loading') {
-    return (
-      <p className="flex items-center gap-2 py-6 text-sm text-slate-400">
-        <LoaderCircle aria-hidden className="size-4 animate-spin" />
-        {t('home.catalogLoading')}
-      </p>
-    );
-  }
-
-  if (status === 'error') {
-    return (
-      <div className="space-y-3 rounded-xl border border-red-900/60 bg-red-950/30 p-4">
-        <p className="flex items-start gap-2 text-sm leading-relaxed text-red-300">
-          <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
-          <span role="alert">{describeError(error, t)}</span>
-        </p>
-        <button
-          type="button"
-          onClick={reload}
-          className="tap-target flex items-center gap-2 rounded-lg px-3 text-sm font-medium text-amber-400 hover:text-amber-300"
-        >
-          <RefreshCw aria-hidden className="size-4" />
-          {t('common.retry')}
-        </button>
-      </div>
-    );
-  }
-
-  if (exercises.length === 0) {
-    return <p className="py-6 text-sm leading-relaxed text-slate-400">{t('home.catalogEmpty')}</p>;
-  }
-
-  return (
-    <div className="space-y-4">
-      {groupByCategory(t, exercises).map(([category, items]) => (
-        <section key={category}>
-          {/* La categoria e' una chiave tradotta; il nome dell'esercizio no,
-              quello e' un dato dell'utente e resta come l'ha scritto. */}
-          <h3 className="text-xs font-medium tracking-wider text-slate-500 uppercase">
-            {categoryLabel(t, category)}
-          </h3>
-          <ul className="mt-2 divide-y divide-slate-800 rounded-xl border border-slate-800">
-            {items.map((exercise) => (
-              <li key={exercise.id} className="flex items-center gap-3 px-3 py-2.5">
-                <span className="min-w-0 flex-1 truncate text-sm text-slate-200">
-                  {exercise.name}
-                </span>
-                {/* L'etichetta viene dal registro metriche, non da un mapping locale. */}
-                <span className="shrink-0 rounded-md bg-slate-800 px-2 py-0.5 text-xs text-slate-400">
-                  {metricLabel(t, exercise.metricType)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
-    </div>
-  );
-}
+const DESTINATIONS: readonly {
+  to: string;
+  icon: LucideIcon;
+  labelKey: TranslationKey;
+  hintKey: TranslationKey;
+}[] = [
+  {
+    to: '/dashboard',
+    icon: ChartLine,
+    labelKey: 'nav.dashboard',
+    hintKey: 'nav.dashboardHint',
+  },
+  {
+    to: '/weight',
+    icon: Scale,
+    labelKey: 'nav.bodyWeight',
+    hintKey: 'nav.bodyWeightHint',
+  },
+];
 
 /**
- * Segnaposto in attesa delle schermate reali (logging dalla M5, dashboard dalla
- * M4). Mostrando il catalogo prova end-to-end la catena della Milestone 2:
- * schema, RLS, tipi del database, mapper e registro metriche.
+ * Punto di partenza dell'app. Per ora smista verso progressi e peso; il flusso
+ * di logging, che diventera' la voce principale, arriva con la Milestone 5.
  */
 export function HomePage() {
   const { user, signOut } = useAuth();
@@ -126,19 +60,25 @@ export function HomePage() {
         <LanguageSwitcher />
       </header>
 
-      <main className="flex-1 space-y-6">
-        <section className="rounded-xl border border-slate-700 bg-slate-900 p-4">
-          <h2 className="text-sm font-medium text-slate-400">{t('home.session')}</h2>
-          <p className="mt-1 truncate text-base font-medium text-slate-100">{user?.email}</p>
-        </section>
-
-        <section>
-          <h2 className="mb-3 text-sm font-medium text-slate-400">{t('home.catalog')}</h2>
-          <CatalogSection />
-        </section>
+      <main className="flex-1 space-y-3">
+        {DESTINATIONS.map(({ to, icon: Icon, labelKey, hintKey }) => (
+          <Link
+            key={to}
+            to={to}
+            className="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 p-4 transition-colors hover:border-slate-600"
+          >
+            <Icon aria-hidden className="size-6 shrink-0 text-amber-400" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-base font-medium text-slate-100">{t(labelKey)}</span>
+              <span className="block text-sm text-slate-500">{t(hintKey)}</span>
+            </span>
+            <ChevronRight aria-hidden className="size-5 shrink-0 text-slate-600" />
+          </Link>
+        ))}
       </main>
 
       <footer className="space-y-3 py-6">
+        <p className="truncate text-xs text-slate-600">{user?.email}</p>
         {error !== null && (
           <p role="alert" className="text-sm text-red-400">
             {describeError(error, t)}
@@ -150,7 +90,7 @@ export function HomePage() {
             void handleSignOut();
           }}
           disabled={signingOut}
-          className="tap-target flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 px-4 py-3 text-base font-medium text-slate-300 hover:bg-slate-900 disabled:opacity-50"
+          className="tap-target flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 px-4 text-base font-medium text-slate-300 hover:bg-slate-900 disabled:opacity-50"
         >
           <LogOut aria-hidden className="size-5" />
           {signingOut ? t('common.signingOut') : t('common.signOut')}

@@ -103,12 +103,17 @@ npx supabase gen types typescript --project-id <project-ref> > src/lib/supabase/
 
 ```
 src/
-  domain/      modello di dominio (camelCase) e registro metriche
-  features/    una cartella per area funzionale (auth, exercises, …)
-  lib/         client Supabase, tipi del database, mapper, env
+  domain/      modello di dominio (camelCase), registro metriche, statistiche
+  features/    una cartella per area funzionale (auth, dashboard, bodyWeight, …)
+  lib/         client Supabase, tipi del database, mapper, i18n, env
   components/  UI condivisa
   routes/      schermate montate dal router
+scripts/       strumenti one-off (generatore della migrazione)
+supabase/      schema e SQL da eseguire nella dashboard
 ```
+
+Schermate: `/` smista, `/dashboard` mostra i progressi per esercizio,
+`/weight` il registro pesate. Il flusso di logging arriva con la Milestone 5.
 
 ### Localizzazione
 
