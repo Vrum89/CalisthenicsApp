@@ -4,6 +4,7 @@ import { LoginPage } from '@/features/auth/LoginPage';
 import { RequireAuth } from '@/features/auth/RequireAuth';
 import { BodyWeightPage } from '@/features/bodyWeight/BodyWeightPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
+import { LogPage } from '@/features/logging/LogPage';
 import { HomePage } from '@/routes/HomePage';
 
 export function App() {
@@ -16,6 +17,14 @@ export function App() {
         element={
           <RequireAuth>
             <HomePage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/log"
+        element={
+          <RequireAuth>
+            <LogPage />
           </RequireAuth>
         }
       />
