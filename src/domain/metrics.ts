@@ -30,6 +30,15 @@ export interface MetricConfig {
   deriveValue?: (repsPerSet: number[]) => number; // per 'sets': somma
   captionKey: TranslationKey;
   chartKind: 'bars-plus-weight-line' | 'line' | 'none';
+  /**
+   * Finestra di tempo entro cui la metrica va misurata, in secondi.
+   *
+   * Sta qui e non sull'esercizio perche' e' parte della definizione della
+   * metrica: `reps` significa "quante ripetizioni in 10 minuti" (spec §5.4), non
+   * "quante ripetizioni". Senza il conto alla rovescia il numero non vuol dire
+   * niente, e finora andava tenuto a mente con un cronometro a parte.
+   */
+  countdownSeconds?: number;
 }
 
 /** Formattazione mm:ss, ereditata dal prototipo (`mmss`). */
@@ -71,6 +80,7 @@ export const METRIC_CONFIG: Record<MetricType, MetricConfig> = {
     formatValue: plainNumber,
     captionKey: 'metric.reps.caption',
     chartKind: 'line',
+    countdownSeconds: 600,
   },
   minutes: {
     labelKey: 'metric.minutes.label',
@@ -121,6 +131,24 @@ export function metricUnit(t: TranslateFn, metricType: MetricType): string {
 
 export function metricCaption(t: TranslateFn, metricType: MetricType): string {
   return t(metricConfig(metricType).captionKey);
+}
+
+const INPUT_HINT_KEYS: Record<MetricConfig['inputKind'], TranslationKey> = {
+  'set-checkboxes': 'metric.input.setCheckboxes',
+  number: 'metric.input.number',
+  stopwatch: 'metric.input.stopwatch',
+  text: 'metric.input.text',
+};
+
+/**
+ * Che aspetto avra' l'input scegliendo questa metrica.
+ *
+ * Distinto da `metricCaption`, che descrive il GRAFICO: al momento di creare un
+ * esercizio "barre e linea azzurra" non risponde alla domanda che si ha in
+ * testa, cioe' "e poi come lo registro?".
+ */
+export function metricInputHint(t: TranslateFn, metricType: MetricType): string {
+  return t(INPUT_HINT_KEYS[metricConfig(metricType).inputKind]);
 }
 
 export function formatMetricValue(

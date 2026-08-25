@@ -79,7 +79,18 @@ export function setsFromScheme(scheme: string, fallbackReps: number): DraftSet[]
  */
 export function draftEntryFor(exercise: Exercise, last: WorkoutExercise | null): DraftEntry {
   const scheme = last?.scheme ?? '';
-  const lastReps = last?.repsPerSet?.[0] ?? DEFAULT_OPEN_REPS;
+
+  /**
+   * In modalita' aperta lo scheme non dice quante serie erano: `progressive` non
+   * e' un piano, e' un'etichetta. Il piano da ripetere sono le ripetizioni
+   * dell'ultima volta — una piramide 1→8 ricompare come otto caselle da
+   * spuntare, non come una casella da 1 che sembra un campo vuoto.
+   */
+  const previous = last?.repsPerSet ?? null;
+  const sets: DraftSet[] =
+    parseScheme(scheme) === null && previous !== null && previous.length > 0
+      ? previous.map((reps) => ({ reps, done: false }))
+      : setsFromScheme(scheme, previous?.[0] ?? DEFAULT_OPEN_REPS);
 
   return {
     id: localId(),
@@ -87,10 +98,7 @@ export function draftEntryFor(exercise: Exercise, last: WorkoutExercise | null):
     name: exercise.name,
     metricType: exercise.metricType,
     scheme,
-    sets:
-      metricConfig(exercise.metricType).inputKind === 'set-checkboxes'
-        ? setsFromScheme(scheme, lastReps)
-        : [],
+    sets: metricConfig(exercise.metricType).inputKind === 'set-checkboxes' ? sets : [],
     value: null,
     addedWeightKg: last?.addedWeightKg ?? null,
     variant: last?.variant ?? '',

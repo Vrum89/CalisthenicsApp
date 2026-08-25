@@ -14,16 +14,18 @@ import { todayIso } from '@/lib/dates';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import type { WorkoutType } from '@/domain/types';
 import { useAuth } from '@/features/auth/useAuth';
+import { createExercise } from '@/features/exercises/exercisesRepository';
 import { useExercises } from '@/features/exercises/useExercises';
 import { useWorkoutHistory } from '@/features/history/useWorkoutHistory';
 import { draftEntryFor, filledEntries } from '@/features/logging/draft';
 import { ExerciseCard } from '@/features/logging/ExerciseCard';
 import { ExercisePicker } from '@/features/logging/ExercisePicker';
-import { lastPerformances } from '@/features/logging/lastPerformance';
+import { knownVariants, lastPerformances } from '@/features/logging/lastPerformance';
+import type { NewExerciseDraft } from '@/features/logging/NewExerciseForm';
 import { RestTimerBar } from '@/features/logging/RestTimerBar';
 import { WorkoutDateField } from '@/features/logging/WorkoutDateField';
 import { saveWorkout } from '@/features/logging/workoutRepository';
-import { useRestTimer } from '@/features/logging/useRestTimer';
+import { REST_MODE, useRestTimer, windowMode } from '@/features/logging/useRestTimer';
 import { useWorkoutDraft } from '@/features/logging/useWorkoutDraft';
 
 /** `from_program` arriva con le schede (M7): senza schede non c'e' cosa scegliere. */
@@ -63,12 +65,25 @@ export function LogPage() {
   const { draft } = draftController;
   const entries = draft.entries;
   const performances = lastPerformances(history.data);
+  const variantsByExercise = knownVariants(history.data);
 
   // L'indice si tiene dentro i bordi qui, non a ogni rimozione: cosi' non c'e'
   // un istante in cui punta a una voce che non esiste piu'.
   const index = Math.min(focus, Math.max(0, entries.length - 1));
   const current = entries[index] ?? null;
   const ready = filledEntries(draft).length > 0;
+
+  async function handleCreateExercise(exercise: NewExerciseDraft) {
+    if (!user) return;
+    const created = await createExercise({ ...exercise, userId: user.id, isActive: true });
+    draftController.addEntry(draftEntryFor(created, null));
+    setFocus(entries.length);
+    setPicking(false);
+    setSaved(false);
+    // Il catalogo si ricarica dopo: l'esercizio e' gia' nella bozza, e
+    // aspettare la lista completa terrebbe fermo chi si sta allenando.
+    exercises.reload();
+  }
 
   async function handleSave() {
     setError(null);
@@ -169,7 +184,13 @@ export function LogPage() {
               onRemove={() => {
                 draftController.removeEntry(current.id);
               }}
-              onSetCompleted={timer.start}
+              variants={variantsByExercise.get(current.exerciseId) ?? []}
+              onSetCompleted={() => {
+                timer.start(REST_MODE);
+              }}
+              onStartWindow={(seconds) => {
+                timer.start(windowMode(seconds));
+              }}
             />
 
             {entries.length > 1 && (
@@ -279,6 +300,7 @@ export function LogPage() {
             setPicking(false);
             setSaved(false);
           }}
+          onCreate={handleCreateExercise}
           onClose={() => {
             setPicking(false);
           }}

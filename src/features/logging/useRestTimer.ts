@@ -1,12 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { beep, primeAudio, vibrate } from '@/lib/beep';
+import type { TranslationKey } from '@/lib/i18n/types';
 
 /**
- * Rest timer (spec §5.5): countdown fra una serie e l'altra.
+ * Conto alla rovescia dal vivo. Serve a due cose che si comportano identiche:
+ * il riposo fra le serie (spec §5.5) e la finestra di un esercizio a tempo
+ * ("quante ripetizioni in 10 minuti", §5.4). In entrambi i casi conta alla
+ * rovescia, non blocca niente e non finisce nel database — il tempo di riposo
+ * per-serie e' fuori scope permanente (spec §10), e la finestra dei 10 minuti e'
+ * una regola dell'esercizio, non un risultato.
  *
- * Non e' il cronometro del circuito — quello conta in su ed e' un dato salvato
- * (`Stopwatch`). Questo conta alla rovescia, non blocca niente e non finisce nel
- * database: il tempo di riposo per-serie e' fuori scope permanente (spec §10).
+ * Non e' il cronometro del circuito (`Stopwatch`): quello conta in su ed e' un
+ * dato salvato.
  *
  * Il tempo si misura su un istante di scadenza (`endsAt`), non decrementando un
  * contatore a ogni tick: col telefono in tasca il browser rallenta o sospende
@@ -16,22 +21,50 @@ import { beep, primeAudio, vibrate } from '@/lib/beep';
  */
 
 export const REST_PRESETS: readonly number[] = [60, 90, 120];
+export const WINDOW_PRESETS: readonly number[] = [300, 600, 900];
 export const DEFAULT_REST_SECONDS = 90;
 
 const TICK_MS = 250;
+
+/** Cosa sta scandendo il timer: cambia l'etichetta e i preset, non il motore. */
+export interface TimerMode {
+  readonly labelKey: TranslationKey;
+  readonly overtimeKey: TranslationKey;
+  readonly presets: readonly number[];
+  readonly seconds: number;
+}
+
+export const REST_MODE: TimerMode = {
+  labelKey: 'log.rest.title',
+  overtimeKey: 'log.rest.overtime',
+  presets: REST_PRESETS,
+  seconds: DEFAULT_REST_SECONDS,
+};
+
+export function windowMode(seconds: number): TimerMode {
+  return {
+    labelKey: 'log.window.title',
+    overtimeKey: 'log.window.over',
+    presets: WINDOW_PRESETS,
+    seconds,
+  };
+}
 
 export interface RestTimer {
   readonly running: boolean;
   /** Secondi al termine. Negativo dopo lo zero: e' l'overtime. */
   readonly remaining: number;
-  /** Durata impostata, quella da cui riparte il prossimo riposo. */
+  /** Durata impostata, quella da cui riparte il prossimo conteggio. */
   readonly duration: number;
-  readonly start: () => void;
+  readonly mode: TimerMode;
+  /** Senza argomento riparte il riposo, che e' il caso normale. */
+  readonly start: (mode?: TimerMode) => void;
   readonly stop: () => void;
   readonly setDuration: (seconds: number) => void;
 }
 
 export function useRestTimer(): RestTimer {
+  const [mode, setMode] = useState<TimerMode>(REST_MODE);
   const [duration, setDurationState] = useState(DEFAULT_REST_SECONDS);
   const [endsAt, setEndsAt] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -57,14 +90,22 @@ export function useRestTimer(): RestTimer {
     };
   }, [endsAt]);
 
-  const start = useCallback(() => {
-    // Dentro il gesto: su iOS l'audio creato altrove nasce muto.
-    primeAudio();
-    beeped.current = false;
-    const tick = Date.now();
-    setNow(tick);
-    setEndsAt(tick + duration * 1000);
-  }, [duration]);
+  const start = useCallback(
+    (next?: TimerMode) => {
+      // Dentro il gesto: su iOS l'audio creato altrove nasce muto.
+      primeAudio();
+      beeped.current = false;
+      // Cambiando modo si riparte dalla durata di quel modo; restando sul
+      // riposo si tiene quella scelta a mano l'ultima volta.
+      const seconds = next && next.labelKey !== mode.labelKey ? next.seconds : duration;
+      if (next) setMode(next);
+      setDurationState(seconds);
+      const tick = Date.now();
+      setNow(tick);
+      setEndsAt(tick + seconds * 1000);
+    },
+    [duration, mode],
+  );
 
   const stop = useCallback(() => {
     setEndsAt(null);
@@ -72,8 +113,8 @@ export function useRestTimer(): RestTimer {
 
   const setDuration = useCallback((seconds: number) => {
     setDurationState(seconds);
-    // Cambiare durata a timer acceso ri-basa il riposo in corso: e' il gesto di
-    // chi si accorge a meta' che oggi gliene serve di piu'.
+    // Cambiare durata a timer acceso ri-basa il conteggio in corso: e' il gesto
+    // di chi si accorge a meta' che oggi gliene serve di piu'.
     setEndsAt((current) => (current === null ? null : Date.now() + seconds * 1000));
     beeped.current = false;
   }, []);
@@ -81,5 +122,5 @@ export function useRestTimer(): RestTimer {
   const running = endsAt !== null;
   const remaining = running ? Math.round((endsAt - now) / 1000) : duration;
 
-  return { running, remaining, duration, start, stop, setDuration };
+  return { running, remaining, duration, mode, start, stop, setDuration };
 }

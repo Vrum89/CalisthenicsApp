@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Search, X } from 'lucide-react';
+import { Plus, Search, X } from 'lucide-react';
 import { categoryLabel, compareCategories } from '@/domain/categories';
 import type { Exercise } from '@/domain/types';
 import { describePerformance, type LastPerformance } from '@/features/logging/lastPerformance';
+import { NewExerciseForm, type NewExerciseDraft } from '@/features/logging/NewExerciseForm';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
 /**
@@ -18,15 +19,18 @@ export function ExercisePicker({
   exercises,
   performances,
   onPick,
+  onCreate,
   onClose,
 }: {
   exercises: readonly Exercise[];
   performances: ReadonlyMap<string, LastPerformance>;
   onPick: (exercise: Exercise) => void;
+  onCreate: (draft: NewExerciseDraft) => Promise<void>;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
+  const [creating, setCreating] = useState(false);
 
   const needle = query.trim().toLowerCase();
   const visible = exercises
@@ -56,47 +60,80 @@ export function ExercisePicker({
           </button>
         </header>
 
-        <div className="relative">
-          <Search aria-hidden className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-500" />
-          <input
-            type="search"
-            autoComplete="off"
-            aria-label={t('log.picker.search')}
-            placeholder={t('log.picker.search')}
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
+        {creating ? (
+          <NewExerciseForm
+            initialName={query.trim()}
+            onCreate={onCreate}
+            onCancel={() => {
+              setCreating(false);
             }}
-            className="tap-target w-full rounded-xl border border-slate-700 bg-slate-900 pr-3 pl-9 text-base text-slate-100 placeholder:text-slate-600"
           />
-        </div>
-
-        {visible.length === 0 ? (
-          <p className="py-6 text-sm text-slate-500">{t('log.picker.empty')}</p>
         ) : (
-          <ul className="-mx-4 mt-2 flex-1 divide-y divide-slate-800 overflow-y-auto px-4 pb-4">
-            {visible.map((exercise) => {
-              const last = performances.get(exercise.id);
-              return (
-                <li key={exercise.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onPick(exercise);
-                    }}
-                    className="w-full py-3 text-left"
-                  >
-                    <span className="block truncate text-base text-slate-100">{exercise.name}</span>
-                    <span className="block truncate text-xs text-slate-500">
-                      {last
-                        ? describePerformance(t, exercise.metricType, last.entry)
-                        : categoryLabel(t, exercise.category)}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+          <>
+            <div className="relative">
+              <Search
+                aria-hidden
+                className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-500"
+              />
+              <input
+                type="search"
+                autoComplete="off"
+                aria-label={t('log.picker.search')}
+                placeholder={t('log.picker.search')}
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                }}
+                className="tap-target w-full rounded-xl border border-slate-700 bg-slate-900 pr-3 pl-9 text-base text-slate-100 placeholder:text-slate-600"
+              />
+            </div>
+
+            <ul className="-mx-4 mt-2 flex-1 divide-y divide-slate-800 overflow-y-auto px-4 pb-4">
+              {visible.map((exercise) => {
+                const last = performances.get(exercise.id);
+                return (
+                  <li key={exercise.id}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onPick(exercise);
+                      }}
+                      className="w-full py-3 text-left"
+                    >
+                      <span className="block truncate text-base text-slate-100">
+                        {exercise.name}
+                      </span>
+                      <span className="block truncate text-xs text-slate-500">
+                        {last
+                          ? describePerformance(t, exercise.metricType, last.entry)
+                          : categoryLabel(t, exercise.category)}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+
+              {/* La creazione sta in fondo all'elenco e non dietro un menu: quando
+                  la ricerca non trova niente e' esattamente cio' che serve, e
+                  quando trova qualcosa non da' fastidio. */}
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreating(true);
+                  }}
+                  className="tap-target flex w-full items-center gap-2 py-3 text-left text-base font-medium text-amber-400"
+                >
+                  <Plus aria-hidden className="size-5 shrink-0" />
+                  <span className="min-w-0 truncate">
+                    {needle === ''
+                      ? t('log.create.open')
+                      : t('log.create.named', { name: query.trim() })}
+                  </span>
+                </button>
+              </li>
+            </ul>
+          </>
         )}
       </div>
     </div>

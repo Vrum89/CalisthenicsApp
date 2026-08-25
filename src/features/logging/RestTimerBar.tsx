@@ -1,17 +1,19 @@
 import { X } from 'lucide-react';
 import { formatMetricValue } from '@/domain/metrics';
-import { REST_PRESETS, type RestTimer } from '@/features/logging/useRestTimer';
+import type { RestTimer } from '@/features/logging/useRestTimer';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
 /**
- * Barra del rest timer (spec §5.5).
+ * Barra del conto alla rovescia: il riposo fra le serie (spec §5.5) o la
+ * finestra di un esercizio a tempo (§5.4). Etichetta e preset li porta il modo,
+ * il motore e' lo stesso.
  *
- * Sta in fondo allo schermo e compare solo mentre il riposo scorre: sul cover
+ * Sta in fondo allo schermo e compare solo mentre il tempo scorre: sul cover
  * display ~360x360 ogni riga permanente e' spazio tolto all'esercizio in focus.
  *
  * Non blocca niente. Si puo' spuntare la serie successiva prima o dopo lo zero;
  * superato lo zero il conteggio prosegue in su, con il segno `+`, per dire
- * quanto si e' riposato in piu' senza trasformarlo in un rimprovero.
+ * quanto tempo e' passato in piu' senza trasformarlo in un rimprovero.
  */
 export function RestTimerBar({ timer }: { timer: RestTimer }) {
   const { t } = useTranslation();
@@ -25,7 +27,7 @@ export function RestTimerBar({ timer }: { timer: RestTimer }) {
       <div className="mx-auto flex w-full max-w-md items-center gap-2 px-4 py-2">
         <div className="min-w-0">
           <p className="text-xs tracking-wider text-slate-500 uppercase">
-            {overtime ? t('log.rest.overtime') : t('log.rest.title')}
+            {overtime ? t(timer.mode.overtimeKey) : t(timer.mode.labelKey)}
           </p>
           <p
             role="timer"
@@ -40,7 +42,7 @@ export function RestTimerBar({ timer }: { timer: RestTimer }) {
         </div>
 
         <div className="ml-auto flex shrink-0 gap-1">
-          {REST_PRESETS.map((preset) => (
+          {timer.mode.presets.map((preset) => (
             <button
               key={preset}
               type="button"
@@ -59,7 +61,7 @@ export function RestTimerBar({ timer }: { timer: RestTimer }) {
           ))}
           <button
             type="button"
-            aria-label={t('log.rest.skip')}
+            aria-label={t('log.timer.dismiss')}
             onClick={timer.stop}
             className="tap-target flex items-center justify-center rounded-lg px-2 text-slate-400 hover:text-slate-200"
           >

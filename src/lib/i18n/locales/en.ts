@@ -129,12 +129,21 @@ export const en: Record<TranslationKey, string> = {
   'log.stopwatch.stop': 'Stop',
   'log.stopwatch.reset': 'Reset the stopwatch',
   'log.stopwatch.manual': 'Enter the time by hand',
+  'log.window.title': 'Window',
+  'log.window.over': "Time's up",
+  'log.window.start': 'Start {time}',
+  'log.timer.dismiss': 'Dismiss the timer',
+  'log.create.open': 'Create a new exercise',
+  'log.create.named': 'Create "{name}"',
+  'log.create.name': 'Name',
+  'log.create.category': 'Category',
+  'log.create.metric': 'How it is measured',
+  'log.create.cancel': 'Cancel',
+  'log.create.submit': 'Create and add',
   'log.rest.title': 'Rest',
   'log.rest.overtime': 'Extra rest',
-  'log.rest.skip': 'Dismiss the rest timer',
   'log.picker.title': 'Pick an exercise',
   'log.picker.search': 'Search',
-  'log.picker.empty': 'No exercise found.',
   'log.picker.close': 'Close',
 
   'bodyWeight.title': 'Body weight',
@@ -175,6 +184,11 @@ export const en: Record<TranslationKey, string> = {
   'metric.note.label': 'Note',
   'metric.note.caption': 'Descriptive entry, no numeric value',
 
+  'metric.input.setCheckboxes': 'Boxes to tick, one per set.',
+  'metric.input.number': 'A single number.',
+  'metric.input.stopwatch': 'A stopwatch you start and stop.',
+  'metric.input.text': 'Free text: kept in the diary, out of the charts.',
+
   'metric.unit.reps': 'reps',
   'metric.unit.minutes': 'min',
   'metric.unit.seconds': 's',
@@ -196,6 +210,7 @@ export const en: Record<TranslationKey, string> = {
   'error.db.permissions':
     'Missing permissions on the table. Check that you also ran the GRANT section of supabase/schema.sql.',
   'error.db.expiredSession': 'Session expired. Sign out and back in with a new magic link.',
+  'error.exercises.create': 'Could not create the exercise. {detail}',
   'error.exercises.load': 'Could not read the exercise catalogue. {detail}',
 
   'error.domain.unknownMetricType': 'Metric type not recognised by the domain: "{value}".',

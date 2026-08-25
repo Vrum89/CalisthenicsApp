@@ -14,6 +14,7 @@
  */
 
 import type { TranslateFn, TranslationKey } from '@/lib/i18n/types';
+import type { MetricType } from '@/domain/types';
 
 /** L'ordine di questo array è l'ordine in cui le categorie appaiono nell'app. */
 export const EXERCISE_CATEGORIES = [
@@ -35,6 +36,27 @@ const CATEGORY_LABEL_KEYS: Record<ExerciseCategory, TranslationKey> = {
   running: 'category.running',
   other: 'category.other',
 };
+
+/**
+ * La metrica che una categoria si porta dietro quasi sempre.
+ *
+ * E' solo una proposta al momento di creare un esercizio: la categoria e'
+ * un'etichetta per raggrupparlo, la metrica decide come si legge il numero, e
+ * restano indipendenti (un massimale a tempo e' legittimo). Serve a non far
+ * scegliere due volte la stessa cosa a chi sta creando un esercizio in palestra.
+ */
+const DEFAULT_METRIC: Record<ExerciseCategory, MetricType> = {
+  strength_sets: 'sets',
+  max_reps_10min: 'reps',
+  time_circuits: 'time',
+  max_effort: 'reps',
+  running: 'time',
+  other: 'note',
+};
+
+export function defaultMetricFor(category: string): MetricType {
+  return isKnownCategory(category) ? DEFAULT_METRIC[category] : 'sets';
+}
 
 export function isKnownCategory(value: string): value is ExerciseCategory {
   return EXERCISE_CATEGORIES.some((category) => category === value);
