@@ -63,6 +63,8 @@ export const it = {
   'dashboard.noChartNote': 'Voce di solo diario: niente da graficare, sotto trovi le annotazioni.',
   'dashboard.noChartSingle': 'Serve più di una sessione con un valore per disegnare un andamento.',
   'dashboard.history': 'Storico',
+  'dashboard.highlight': 'Evidenzia sul grafico',
+  'dashboard.highlighted': 'Evidenziata sul grafico',
   'dashboard.sessions': 'Sessioni',
   'dashboard.pr': 'PR',
   'dashboard.newRecord': 'Nuovo record',

@@ -58,6 +58,8 @@ export const en: Record<TranslationKey, string> = {
   'dashboard.noChartNote': 'Diary entry only: nothing to chart, the notes are below.',
   'dashboard.noChartSingle': 'More than one session with a value is needed to draw a trend.',
   'dashboard.history': 'History',
+  'dashboard.highlight': 'Highlight on the chart',
+  'dashboard.highlighted': 'Highlighted on the chart',
   'dashboard.sessions': 'Sessions',
   'dashboard.pr': 'PR',
   'dashboard.newRecord': 'New record',

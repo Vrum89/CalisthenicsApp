@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, LoaderCircle, TriangleAlert } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
@@ -22,6 +22,8 @@ export function DashboardPage() {
 
   const [pickedCategory, setPickedCategory] = useState<string | null>(null);
   const [pickedExerciseId, setPickedExerciseId] = useState<string | null>(null);
+  const [pickedEntryId, setPickedEntryId] = useState<string | null>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
 
   const exercises = exercisesQuery.data;
 
@@ -46,6 +48,22 @@ export function DashboardPage() {
         exercise.metricType,
       )
     : null;
+
+  // Anche la voce evidenziata e' derivata: cambiando esercizio la selezione
+  // decade da sola, senza un effect che la azzeri.
+  const selectedEntryId =
+    stats?.comparable.some((point) => point.entry.id === pickedEntryId) === true
+      ? pickedEntryId
+      : null;
+
+  function selectEntry(entryId: string | null) {
+    setPickedEntryId(entryId);
+    if (entryId === null) return;
+    // Sul telefono lo storico sta sotto il grafico: senza questo, toccare una
+    // voce in fondo evidenzierebbe un punto fuori schermo.
+    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    chartRef.current?.scrollIntoView({ block: 'nearest', behavior: smooth ? 'smooth' : 'auto' });
+  }
 
   const loading = exercisesQuery.status === 'loading' || historyQuery.status === 'loading';
   const failure =
@@ -152,10 +170,13 @@ export function DashboardPage() {
                           {t('dashboard.noChartSingle')}
                         </p>
                       ) : (
-                        <ExerciseChart
-                          points={stats.comparable}
-                          metricType={exercise.metricType}
-                        />
+                        <div ref={chartRef} className="scroll-mt-4">
+                          <ExerciseChart
+                            points={stats.comparable}
+                            metricType={exercise.metricType}
+                            selectedEntryId={selectedEntryId}
+                          />
+                        </div>
                       )}
 
                       <section className="space-y-2">
@@ -167,7 +188,12 @@ export function DashboardPage() {
                             {t('dashboard.sessions')} {stats.points.length}
                           </span>
                         </div>
-                        <EntryList stats={stats} metricType={exercise.metricType} />
+                        <EntryList
+                          stats={stats}
+                          metricType={exercise.metricType}
+                          selectedEntryId={selectedEntryId}
+                          onSelect={selectEntry}
+                        />
                       </section>
                     </>
                   )}
