@@ -57,6 +57,11 @@ export const en: Record<TranslationKey, string> = {
   'dashboard.noData': 'No workouts logged for this exercise yet.',
   'dashboard.noChartNote': 'Diary entry only: nothing to chart, the notes are below.',
   'dashboard.noChartSingle': 'More than one session with a value is needed to draw a trend.',
+  'dashboard.variants': 'Condition',
+  'dashboard.variantAll': 'All',
+  'dashboard.variantNone': 'not recorded',
+  'dashboard.variantMixed':
+    'These {count} conditions are not comparable with each other: pick one for exact records and trend.',
   'dashboard.history': 'History',
   'dashboard.highlight': 'Highlight on the chart',
   'dashboard.highlighted': 'Highlighted on the chart',

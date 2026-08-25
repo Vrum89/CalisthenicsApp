@@ -1,6 +1,7 @@
 import {
   Bar,
   CartesianGrid,
+  Cell,
   ComposedChart,
   Line,
   ReferenceDot,
@@ -13,24 +14,29 @@ import {
 import { formatMetricTick, formatMetricValue, metricCaption, metricConfig } from '@/domain/metrics';
 import type { HistoryPoint } from '@/domain/stats';
 import type { MetricType } from '@/domain/types';
+import { NO_VARIANT, variantLabel, type VariantGroup } from '@/domain/variants';
 import { formatAxisDate, formatDate } from '@/lib/dates';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { SINGLE_SERIES_COLOR, variantColor } from '@/features/dashboard/variantPalette';
 
-const AMBER = '#fbbf24';
 const SKY = '#38bdf8';
 const GRID = '#334155';
 const AXIS_TEXT = '#94a3b8';
+const SURFACE = '#0f172a';
 
 interface ChartPoint {
   entryId: string;
   label: string;
   full: string;
   value: number;
+  variantIndex: number;
+  variant: string | null;
   weight: number | null;
   display: string;
   scheme: string | null;
-  variant: string | null;
   notes: string | null;
+  /** Una serie per variante: solo quella della voce è valorizzata. */
+  [seriesKey: `series${number}`]: number | null;
 }
 
 interface TooltipItem {
@@ -47,7 +53,9 @@ function ChartTooltip({
   showWeight: boolean;
 }) {
   const { t } = useTranslation();
-  const point = payload?.[0]?.payload;
+  // Con una serie per variante, la prima voce del payload può essere quella
+  // vuota: si prende la prima che porta davvero un punto.
+  const point = payload?.find((item) => item.payload !== undefined)?.payload;
   if (!active || !point) return null;
 
   return (
@@ -60,7 +68,16 @@ function ChartTooltip({
       {showWeight && point.weight !== null && (
         <div className="text-sky-400">{t('dashboard.addedWeight', { kg: point.weight })}</div>
       )}
-      {point.variant && <div className="text-slate-300">{point.variant}</div>}
+      {point.variant !== null && point.variant !== NO_VARIANT && (
+        <div className="flex items-center gap-1.5 text-slate-300">
+          <span
+            aria-hidden
+            className="size-2 shrink-0 rounded-full"
+            style={{ backgroundColor: variantColor(point.variantIndex) }}
+          />
+          {point.variant}
+        </div>
+      )}
       {point.notes && <div className="mt-0.5 text-slate-500">{point.notes}</div>}
     </div>
   );
@@ -72,39 +89,75 @@ function ChartTooltip({
  *
  * Riceve solo i punti confrontabili: una voce esclusa e' fuori dai calcoli, e
  * un grafico e' un calcolo. Resta visibile nell'elenco sotto, attenuata.
+ *
+ * Quando l'esercizio ha piu' condizioni e non ne e' filtrata una, ogni
+ * condizione prende un colore e una linea sua: unire con un'unica linea
+ * sessioni fatte con assistenza diversa disegnerebbe una progressione che non
+ * e' mai esistita.
  */
 export function ExerciseChart({
   points,
   metricType,
   selectedEntryId,
+  variants,
+  selectedVariant,
 }: {
   points: readonly HistoryPoint[];
   metricType: MetricType;
-  /** Voce scelta nello storico: viene marcata sul grafico. */
   selectedEntryId: string | null;
+  /** Tutte le condizioni dell'esercizio, in ordine stabile. */
+  variants: readonly VariantGroup[];
+  /** `null` = nessun filtro. */
+  selectedVariant: string | null;
 }) {
   const { t, language } = useTranslation();
   const { chartKind } = metricConfig(metricType);
-
-  const data: ChartPoint[] = points.map((point) => ({
-    entryId: point.entry.id,
-    label: formatAxisDate(language, point.date),
-    full:
-      formatDate(language, point.date) +
-      (point.originalDate
-        ? ` (${t('dashboard.originalDate', { date: point.originalDate })})`
-        : ''),
-    value: point.entry.metricValue ?? 0,
-    weight: point.entry.addedWeightKg,
-    display: formatMetricValue(t, metricType, point.entry.metricValue),
-    scheme: point.entry.scheme,
-    variant: point.entry.variant,
-    notes: point.entry.notes,
-  }));
-
   const withWeight = chartKind === 'bars-plus-weight-line';
+
+  const indexOfVariant = new Map(variants.map((group, index) => [group.variant, index]));
+  // Colori solo quando c'e' davvero piu' di una condizione e nessuna e' scelta:
+  // con una serie sola una legenda non aggiungerebbe niente.
+  const coloured = variants.length > 1 && selectedVariant === null;
+
+  const seriesColor = (variantIndex: number): string =>
+    variants.length > 1 ? variantColor(variantIndex) : SINGLE_SERIES_COLOR;
+
+  const data: ChartPoint[] = points.map((point) => {
+    const variant = point.entry.variant ?? NO_VARIANT;
+    const variantIndex = indexOfVariant.get(variant) ?? 0;
+    const value = point.entry.metricValue ?? 0;
+
+    const perVariant: Record<string, number | null> = {};
+    if (coloured) {
+      for (let i = 0; i < variants.length; i += 1) {
+        perVariant[`series${String(i)}`] = i === variantIndex ? value : null;
+      }
+    }
+
+    return {
+      entryId: point.entry.id,
+      label: formatAxisDate(language, point.date),
+      full:
+        formatDate(language, point.date) +
+        (point.originalDate
+          ? ` (${t('dashboard.originalDate', { date: point.originalDate })})`
+          : ''),
+      value,
+      variantIndex,
+      variant: point.entry.variant,
+      weight: point.entry.addedWeightKg,
+      display: formatMetricValue(t, metricType, point.entry.metricValue),
+      scheme: point.entry.scheme,
+      notes: point.entry.notes,
+      ...perVariant,
+    };
+  });
+
   const labelById = new Map(data.map((point) => [point.entryId, point.label]));
   const selected = data.find((point) => point.entryId === selectedEntryId) ?? null;
+  const singleColor = seriesColor(
+    selectedVariant === null ? 0 : (indexOfVariant.get(selectedVariant) ?? 0),
+  );
 
   return (
     <div className="rounded-xl border border-slate-700/60 bg-slate-800/40 p-3">
@@ -149,18 +202,37 @@ export function ExerciseChart({
             content={<ChartTooltip showWeight={withWeight} />}
             cursor={{ fill: '#33415555' }}
           />
+
           {withWeight ? (
-            <Bar yAxisId="value" dataKey="value" fill={AMBER} radius={[3, 3, 0, 0]} maxBarSize={18} />
+            <Bar yAxisId="value" dataKey="value" radius={[3, 3, 0, 0]} maxBarSize={18}>
+              {data.map((point) => (
+                <Cell key={point.entryId} fill={seriesColor(point.variantIndex)} />
+              ))}
+            </Bar>
+          ) : coloured ? (
+            variants.map((group, index) => (
+              <Line
+                key={group.variant}
+                yAxisId="value"
+                dataKey={`series${String(index)}`}
+                stroke={variantColor(index)}
+                strokeWidth={2}
+                connectNulls
+                dot={{ r: 4, fill: variantColor(index), stroke: SURFACE, strokeWidth: 2 }}
+                activeDot={{ r: 6 }}
+              />
+            ))
           ) : (
             <Line
               yAxisId="value"
               dataKey="value"
-              stroke={AMBER}
+              stroke={singleColor}
               strokeWidth={2}
-              dot={{ r: 3, fill: AMBER, stroke: '#0f172a', strokeWidth: 1 }}
-              activeDot={{ r: 5 }}
+              dot={{ r: 4, fill: singleColor, stroke: SURFACE, strokeWidth: 2 }}
+              activeDot={{ r: 6 }}
             />
           )}
+
           {withWeight && (
             <Line
               yAxisId="weight"
@@ -171,6 +243,7 @@ export function ExerciseChart({
               dot={{ r: 2.5, fill: SKY }}
             />
           )}
+
           {selected && (
             <ReferenceLine
               yAxisId="value"
@@ -186,12 +259,28 @@ export function ExerciseChart({
               y={selected.value}
               r={6}
               fill="#f8fafc"
-              stroke={AMBER}
+              stroke={seriesColor(selected.variantIndex)}
               strokeWidth={2}
             />
           )}
         </ComposedChart>
       </ResponsiveContainer>
+
+      {coloured && (
+        <ul className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1">
+          {variants.map((group, index) => (
+            <li key={group.variant} className="flex items-center gap-1.5 text-xs text-slate-300">
+              <span
+                aria-hidden
+                className="size-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: variantColor(index) }}
+              />
+              {variantLabel(t, group.variant)}
+            </li>
+          ))}
+        </ul>
+      )}
+
       <p className="mt-2 text-center text-xs text-slate-500">{metricCaption(t, metricType)}</p>
     </div>
   );

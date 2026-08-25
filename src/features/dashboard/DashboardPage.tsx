@@ -6,6 +6,7 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { compareCategories } from '@/domain/categories';
 import { metricConfig } from '@/domain/metrics';
 import { buildHistory, computeStats } from '@/domain/stats';
+import { listVariants, pointsWithVariant } from '@/domain/variants';
 import { describeError } from '@/lib/errors';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { useExercises } from '@/features/exercises/useExercises';
@@ -14,6 +15,7 @@ import { CategoryTabs } from '@/features/dashboard/CategoryTabs';
 import { EntryList } from '@/features/dashboard/EntryList';
 import { ExerciseChart } from '@/features/dashboard/ExerciseChart';
 import { StatCards } from '@/features/dashboard/StatCards';
+import { VariantFilter } from '@/features/dashboard/VariantFilter';
 
 export function DashboardPage() {
   const { t } = useTranslation();
@@ -23,6 +25,7 @@ export function DashboardPage() {
   const [pickedCategory, setPickedCategory] = useState<string | null>(null);
   const [pickedExerciseId, setPickedExerciseId] = useState<string | null>(null);
   const [pickedEntryId, setPickedEntryId] = useState<string | null>(null);
+  const [pickedVariant, setPickedVariant] = useState<string | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
 
   const exercises = exercisesQuery.data;
@@ -42,12 +45,20 @@ export function DashboardPage() {
   // Compiler memoizza da se'. Scriverlo a mano qui faceva solo litigare il
   // compilatore con dipendenze che non riusciva a dimostrare stabili.
   const workoutsById = new Map(historyQuery.data.workouts.map((workout) => [workout.id, workout]));
-  const stats = exercise
-    ? computeStats(
-        buildHistory(historyQuery.data.entries, workoutsById, exercise.id),
-        exercise.metricType,
-      )
-    : null;
+  const allPoints = exercise
+    ? buildHistory(historyQuery.data.entries, workoutsById, exercise.id)
+    : [];
+
+  // Le condizioni si calcolano su TUTTE le voci, non su quelle filtrate: e' cio'
+  // che tiene stabile l'ordine, e quindi i colori, mentre si filtra.
+  const variants = listVariants(allPoints);
+  const variant = variants.some((group) => group.variant === pickedVariant) ? pickedVariant : null;
+
+  const points = variant === null ? allPoints : pointsWithVariant(allPoints, variant);
+  const stats = exercise ? computeStats(points, exercise.metricType) : null;
+  // Record e trend mescolano condizioni non confrontabili finche' non se ne
+  // sceglie una: va detto, non lasciato dedurre.
+  const mixed = variant === null && variants.length > 1;
 
   // Anche la voce evidenziata e' derivata: cambiando esercizio la selezione
   // decade da sola, senza un effect che la azzeri.
@@ -127,6 +138,7 @@ export function DashboardPage() {
                 onSelect={(next) => {
                   setPickedCategory(next);
                   setPickedExerciseId(null);
+                  setPickedVariant(null);
                 }}
               />
 
@@ -142,6 +154,7 @@ export function DashboardPage() {
                   value={exercise?.id ?? ''}
                   onChange={(event) => {
                     setPickedExerciseId(event.target.value);
+                    setPickedVariant(null);
                   }}
                   className="tap-target w-full rounded-xl border border-slate-700 bg-slate-900 px-3 text-base text-slate-100"
                 >
@@ -159,7 +172,24 @@ export function DashboardPage() {
                     <p className="py-6 text-sm text-slate-400">{t('dashboard.noData')}</p>
                   ) : (
                     <>
+                      {variants.length > 1 && (
+                        <VariantFilter
+                          variants={variants}
+                          selected={variant}
+                          onSelect={(next) => {
+                            setPickedVariant(next);
+                            setPickedEntryId(null);
+                          }}
+                        />
+                      )}
+
                       <StatCards stats={stats} metricType={exercise.metricType} />
+
+                      {mixed && (
+                        <p className="rounded-xl border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-xs leading-relaxed text-amber-200/80">
+                          {t('dashboard.variantMixed', { count: variants.length })}
+                        </p>
+                      )}
 
                       {metricConfig(exercise.metricType).chartKind === 'none' ? (
                         <p className="rounded-xl border border-slate-700/60 bg-slate-800/40 p-4 text-sm text-slate-400">
@@ -175,6 +205,8 @@ export function DashboardPage() {
                             points={stats.comparable}
                             metricType={exercise.metricType}
                             selectedEntryId={selectedEntryId}
+                            variants={variants}
+                            selectedVariant={variant}
                           />
                         </div>
                       )}

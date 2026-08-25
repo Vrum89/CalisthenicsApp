@@ -62,6 +62,11 @@ export const it = {
   'dashboard.noData': 'Nessun allenamento registrato per questo esercizio.',
   'dashboard.noChartNote': 'Voce di solo diario: niente da graficare, sotto trovi le annotazioni.',
   'dashboard.noChartSingle': 'Serve più di una sessione con un valore per disegnare un andamento.',
+  'dashboard.variants': 'Condizione',
+  'dashboard.variantAll': 'Tutte',
+  'dashboard.variantNone': 'non registrata',
+  'dashboard.variantMixed':
+    'Queste {count} condizioni non sono confrontabili fra loro: scegline una per avere record e trend esatti.',
   'dashboard.history': 'Storico',
   'dashboard.highlight': 'Evidenzia sul grafico',
   'dashboard.highlighted': 'Evidenziata sul grafico',
