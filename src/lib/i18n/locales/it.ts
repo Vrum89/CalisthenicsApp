@@ -64,7 +64,7 @@ export const it = {
   'dashboard.noChartSingle': 'Serve più di una sessione con un valore per disegnare un andamento.',
   'dashboard.variants': 'Condizione',
   'dashboard.variantAll': 'Tutte',
-  'dashboard.variantNone': 'non registrata',
+  'dashboard.variantNone': 'nessuna condizione',
   'dashboard.variantOther': 'Altre ({count})',
   'dashboard.variantMixed':
     'Queste {count} condizioni non sono confrontabili fra loro: scegline una per avere record e trend esatti.',

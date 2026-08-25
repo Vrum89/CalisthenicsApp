@@ -59,7 +59,7 @@ export const en: Record<TranslationKey, string> = {
   'dashboard.noChartSingle': 'More than one session with a value is needed to draw a trend.',
   'dashboard.variants': 'Condition',
   'dashboard.variantAll': 'All',
-  'dashboard.variantNone': 'not recorded',
+  'dashboard.variantNone': 'no condition',
   'dashboard.variantOther': 'Other ({count})',
   'dashboard.variantMixed':
     'These {count} conditions are not comparable with each other: pick one for exact records and trend.',
