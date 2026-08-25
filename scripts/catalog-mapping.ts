@@ -163,3 +163,64 @@ export const SUPERSET_BY_REST: Readonly<Record<string, SupersetPlan>> = {
 
 /** Usato solo se il riposo manca del tutto: e' il superset come e' concepito. */
 export const DEFAULT_SUPERSET: SupersetPlan = PULL_PLUS_DIP;
+
+/**
+ * Assistenza, non zavorra.
+ *
+ * Negli handstand push up il materassino e i dischi vanno SOTTO la testa: fanno
+ * spessore, accorciano la discesa e rendono l'esercizio piu' facile. E' il
+ * contrario di `addedWeightKg`, che nel modello significa carico aggiunto,
+ * quindi piu' difficile. Il seed di luglio riportava quei 5 kg come zavorra:
+ * qui vengono spostati nella variante e il campo del carico resta vuoto.
+ *
+ * I massimali dello stesso esercizio lo confermano: 6 ripetizioni senza
+ * assistenza, 13 con materassino e disco da 5.
+ */
+export const ASSISTANCE_AS_WEIGHT: Readonly<Record<string, (kg: number) => string>> = {
+  'Hand stand push up (10 min)': (kg) => `materassino + disco ${String(kg)}`,
+  'Massimale: Hand stand push up': (kg) => `materassino + disco ${String(kg)}`,
+};
+
+/**
+ * Varianti canoniche.
+ *
+ * Il diario le chiamava in modi diversi nel tempo — "rialzo", "solo
+ * materassino", "solo tappetino", "disco da 5" — ma sono la stessa scala:
+ * il materassino c'e' sempre, e i dischi si sommano sopra per fare spessore.
+ * Senza unificarle, filtrare per variante spaccherebbe lo storico in gruppi
+ * che descrivono la stessa condizione.
+ */
+export const VARIANT_MAP: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  'Hand stand push up (10 min)': {
+    'con rialzo': 'materassino',
+    'rialzo + disco da 5': 'materassino + disco 5',
+    'solo materassino': 'materassino',
+    'disco da 5': 'materassino + disco 5',
+    'disco da 10': 'materassino + disco 10',
+  },
+  'Massimale: Hand stand push up': {
+    'senza peso': 'senza assistenza',
+    'solo tappetino': 'materassino',
+    'rialzo + disco da 5': 'materassino + disco 5',
+    'disco da 10': 'materassino + disco 10',
+  },
+};
+
+/**
+ * Condizioni ricostruite a posteriori, che il diario non annotava.
+ *
+ * Le prime sessioni di ottobre e novembre 2025 risultavano senza variante o
+ * con il generico "con rialzo". In realta' erano materassino piu' disco da 10.
+ * Senza questa correzione finivano nello stesso gruppo delle sessioni fatte
+ * senza imbottitura, e il record di 34 sarebbe stato attribuito alla
+ * condizione sbagliata.
+ */
+export const VARIANT_BY_DATE: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  'Hand stand push up (10 min)': {
+    '2025-10-11': 'materassino + disco 10',
+    '2025-10-18': 'materassino + disco 10',
+    '2025-10-24': 'materassino + disco 10',
+    '2025-10-30': 'materassino + disco 10',
+    '2025-11-06': 'materassino + disco 10',
+  },
+};
