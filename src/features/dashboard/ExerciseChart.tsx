@@ -3,6 +3,8 @@ import {
   CartesianGrid,
   ComposedChart,
   Line,
+  ReferenceDot,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -20,6 +22,7 @@ const GRID = '#334155';
 const AXIS_TEXT = '#94a3b8';
 
 interface ChartPoint {
+  entryId: string;
   label: string;
   full: string;
   value: number;
@@ -73,14 +76,18 @@ function ChartTooltip({
 export function ExerciseChart({
   points,
   metricType,
+  selectedEntryId,
 }: {
   points: readonly HistoryPoint[];
   metricType: MetricType;
+  /** Voce scelta nello storico: viene marcata sul grafico. */
+  selectedEntryId: string | null;
 }) {
   const { t, language } = useTranslation();
   const { chartKind } = metricConfig(metricType);
 
   const data: ChartPoint[] = points.map((point) => ({
+    entryId: point.entry.id,
     label: formatShortDate(point.date),
     full:
       formatDate(language, point.date) +
@@ -96,18 +103,26 @@ export function ExerciseChart({
   }));
 
   const withWeight = chartKind === 'bars-plus-weight-line';
+  const labelById = new Map(data.map((point) => [point.entryId, point.label]));
+  const selected = data.find((point) => point.entryId === selectedEntryId) ?? null;
 
   return (
     <div className="rounded-xl border border-slate-700/60 bg-slate-800/40 p-3">
       <ResponsiveContainer width="100%" height={250}>
         <ComposedChart data={data} margin={{ top: 8, right: 4, left: -14, bottom: 0 }}>
           <CartesianGrid stroke={GRID} strokeDasharray="2 4" vertical={false} />
+          {/* L'asse X e' indicizzato sull'id della voce, non sulla data
+              formattata: "13/10" si ripete di anno in anno, e due punti con la
+              stessa etichetta si sovrapporrebbero. L'etichetta la mette il
+              tickFormatter, e cosi' anche l'evidenziazione ha un bersaglio
+              univoco su cui puntare. */}
           <XAxis
-            dataKey="label"
+            dataKey="entryId"
             tick={{ fill: AXIS_TEXT, fontSize: 10 }}
             interval="preserveStartEnd"
             tickLine={false}
             axisLine={{ stroke: '#475569' }}
+            tickFormatter={(entryId: string) => labelById.get(entryId) ?? ''}
           />
           <YAxis
             yAxisId="value"
@@ -154,6 +169,25 @@ export function ExerciseChart({
               strokeWidth={2}
               connectNulls
               dot={{ r: 2.5, fill: SKY }}
+            />
+          )}
+          {selected && (
+            <ReferenceLine
+              yAxisId="value"
+              x={selected.entryId}
+              stroke={AXIS_TEXT}
+              strokeDasharray="3 3"
+            />
+          )}
+          {selected && (
+            <ReferenceDot
+              yAxisId="value"
+              x={selected.entryId}
+              y={selected.value}
+              r={6}
+              fill="#f8fafc"
+              stroke={AMBER}
+              strokeWidth={2}
             />
           )}
         </ComposedChart>
