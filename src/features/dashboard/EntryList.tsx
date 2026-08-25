@@ -2,7 +2,7 @@ import { Trophy } from 'lucide-react';
 import { formatMetricValue } from '@/domain/metrics';
 import { isPersonalRecord, type ExerciseStats, type HistoryPoint } from '@/domain/stats';
 import type { MetricType } from '@/domain/types';
-import { formatDate } from '@/lib/dates';
+import { formatCompactDate } from '@/lib/dates';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
 /**
@@ -38,7 +38,7 @@ export function EntryList({
       <>
         <div className="flex items-baseline gap-2">
           <span className="text-sm text-slate-400 tabular-nums">
-            {formatDate(language, point.date)}
+            {formatCompactDate(language, point.date)}
           </span>
           <span className="min-w-0 flex-1" />
           {record && (
