@@ -63,7 +63,35 @@ RLS, grant per la Data API e catalogo esercizi di default. Si applica dalla
 dashboard (**SQL Editor → New query** → incolla tutto → **Run**) ed è
 idempotente, quindi si può rieseguire dopo ogni modifica.
 
-I tipi in `src/lib/supabase/database.types.ts` rispecchiano quello schema e sono
+### Dati storici
+
+Gli script SQL vanno eseguiti in quest'ordine, una volta sola:
+
+| File | Cosa fa | Quando |
+| ---- | ------- | ------ |
+| `supabase/schema.sql` | tabelle, RLS, catalogo di default | sempre per primo, e a ogni modifica dello schema |
+| `supabase/migration-history.sql` | 68 allenamenti e 202 voci dal vecchio diario | una volta |
+| `supabase/mark-exclusions.sql` | esclude 4 voci non confrontabili dai record | facoltativo |
+
+`migration-history.sql` è **generato**, non scritto a mano:
+
+```bash
+npm run migrate:generate
+```
+
+Legge l'array `ROWS` di `docs/reference/diario-allenamenti.jsx` e
+`seed/seed-workouts-jul-aug-2026.json`, e riscrive il file SQL. La tabella di
+corrispondenza fra i vecchi nomi e il catalogo canonico sta in
+`scripts/catalog-mapping.ts`: è la parte che va **letta e approvata**, perché un
+nome sbagliato lì sposta anni di storico sotto l'esercizio sbagliato.
+
+Ogni riga ha un id deterministico (UUID v5), quindi rieseguire l'SQL non
+duplica nulla. Non aggiorna però le righe già presenti: per riapplicare una
+correzione, cancella prima gli allenamenti interessati.
+
+### Tipi del database
+
+I tipi in `src/lib/supabase/database.types.ts` rispecchiano lo schema e sono
 scritti a mano. Dopo aver applicato lo schema conviene rigenerarli dalla fonte:
 
 ```bash
@@ -75,12 +103,17 @@ npx supabase gen types typescript --project-id <project-ref> > src/lib/supabase/
 
 ```
 src/
-  domain/      modello di dominio (camelCase) e registro metriche
-  features/    una cartella per area funzionale (auth, exercises, …)
-  lib/         client Supabase, tipi del database, mapper, env
+  domain/      modello di dominio (camelCase), registro metriche, statistiche
+  features/    una cartella per area funzionale (auth, dashboard, bodyWeight, …)
+  lib/         client Supabase, tipi del database, mapper, i18n, env
   components/  UI condivisa
   routes/      schermate montate dal router
+scripts/       strumenti one-off (generatore della migrazione)
+supabase/      schema e SQL da eseguire nella dashboard
 ```
+
+Schermate: `/` smista, `/dashboard` mostra i progressi per esercizio,
+`/weight` il registro pesate. Il flusso di logging arriva con la Milestone 5.
 
 ### Localizzazione
 
