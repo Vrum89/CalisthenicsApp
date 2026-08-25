@@ -65,6 +65,7 @@ export const it = {
   'dashboard.variants': 'Condizione',
   'dashboard.variantAll': 'Tutte',
   'dashboard.variantNone': 'non registrata',
+  'dashboard.variantOther': 'Altre ({count})',
   'dashboard.variantMixed':
     'Queste {count} condizioni non sono confrontabili fra loro: scegline una per avere record e trend esatti.',
   'dashboard.history': 'Storico',
