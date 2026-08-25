@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { App } from '@/App';
 import { ConfigErrorScreen } from '@/components/ConfigErrorScreen';
 import { AuthProvider } from '@/features/auth/AuthProvider';
+import { I18nProvider } from '@/lib/i18n/I18nProvider';
 import { readEnv } from '@/lib/env';
 import '@/index.css';
 
@@ -16,16 +17,20 @@ if (!rootElement) {
 // l'AuthProvider non viene nemmeno creato e il client Supabase non parte.
 const envResult = readEnv();
 
+// L'I18nProvider avvolge anche la schermata di configurazione: un'app che non
+// parte deve comunque spiegarsi nella lingua giusta.
 createRoot(rootElement).render(
   <StrictMode>
-    {envResult.ok ? (
-      <BrowserRouter>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </BrowserRouter>
-    ) : (
-      <ConfigErrorScreen missing={envResult.missing} />
-    )}
+    <I18nProvider>
+      {envResult.ok ? (
+        <BrowserRouter>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </BrowserRouter>
+      ) : (
+        <ConfigErrorScreen missing={envResult.missing} />
+      )}
+    </I18nProvider>
   </StrictMode>,
 );

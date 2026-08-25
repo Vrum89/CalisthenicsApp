@@ -1,5 +1,8 @@
 <!doctype html>
-<html lang="it">
+<!-- `lang` e la description sono in inglese perche' sono cio' che si vede prima
+     che React monti e scelga la lingua: l'inglese e' il fallback dell'app.
+     L'I18nProvider riscrive `lang` sull'elemento <html> a ogni cambio lingua. -->
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -7,7 +10,10 @@
          piega e ritagli fotocamera del cover display (spec §2.5). -->
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0f172a" />
-    <meta name="description" content="Diario di allenamento calisthenics: registra le sessioni e guarda i progressi." />
+    <meta
+      name="description"
+      content="Calisthenics workout diary: log your sessions and track your progress."
+    />
 
     <!-- iOS: installazione a schermo intero -->
     <meta name="mobile-web-app-capable" content="yes" />

@@ -7,6 +7,7 @@
  * un cast silenzioso avrebbe fatto entrare nel dominio dati mai validati.
  */
 
+import { AppError } from '@/lib/errors';
 import type { Tables, TablesInsert } from '@/lib/supabase/database.types';
 import {
   METRIC_TYPES,
@@ -34,7 +35,9 @@ export type NewBodyWeight = Omit<BodyWeight, 'id' | 'createdAt'>;
 function parseMetricType(value: string): MetricType {
   const found = METRIC_TYPES.find((candidate) => candidate === value);
   if (!found) {
-    throw new Error(`metric_type non riconosciuto dal dominio: "${value}".`);
+    throw new AppError('error.domain.unknownMetricType', `Unknown metric_type: "${value}".`, {
+      value,
+    });
   }
   return found;
 }
@@ -42,7 +45,9 @@ function parseMetricType(value: string): MetricType {
 function parseWorkoutType(value: string): WorkoutType {
   const found = WORKOUT_TYPES.find((candidate) => candidate === value);
   if (!found) {
-    throw new Error(`workout_type non riconosciuto dal dominio: "${value}".`);
+    throw new AppError('error.domain.unknownWorkoutType', `Unknown workout_type: "${value}".`, {
+      value,
+    });
   }
   return found;
 }
@@ -55,7 +60,9 @@ function parseWorkoutType(value: string): WorkoutType {
 function toNumber(value: number | string): number {
   const parsed = typeof value === 'number' ? value : Number(value);
   if (Number.isNaN(parsed)) {
-    throw new Error(`Valore numerico non valido dal database: "${String(value)}".`);
+    throw new AppError('error.domain.invalidNumber', `Invalid numeric value: "${String(value)}".`, {
+      value: String(value),
+    });
   }
   return parsed;
 }

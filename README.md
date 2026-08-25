@@ -82,7 +82,28 @@ src/
   routes/      schermate montate dal router
 ```
 
-Due regole che vale la pena non violare:
+### Localizzazione
+
+L'app è in italiano e in inglese. La lingua si sceglie dallo switcher IT/EN in
+alto; alla prima apertura segue quella del dispositivo e poi resta memorizzata.
+
+L'ordine è: scelta esplicita → lingua del dispositivo → **inglese**. Il fallback
+è l'inglese e non l'italiano perché serve a chi non parla nessuna delle due
+lingue supportate; un dispositivo in italiano viene riconosciuto prima e non ci
+arriva mai.
+
+`src/lib/i18n/locales/it.ts` è il locale di riferimento: le sue chiavi generano
+il tipo `TranslationKey`, su cui `en.ts` è tipizzato. **Una stringa aggiunta solo
+in italiano fa fallire il build**, invece di comparire come chiave grezza a
+schermo.
+
+I dati dell'utente (nomi degli esercizi, note, varianti) non vengono tradotti:
+restano come sono stati scritti. Le **categorie** sono l'eccezione: nel database
+contengono una chiave neutra (`strength_sets`, non "Forza"), tradotta a video da
+`src/domain/categories.ts`. Una chiave non riconosciuta viene mostrata così
+com'è, senza errori.
+
+Tre regole che vale la pena non violare:
 
 - **Il registro metriche** (`src/domain/metrics.ts`) è l'unica fonte della
   semantica di una metrica: best min/max, direzione del trend, formattazione,
@@ -90,6 +111,8 @@ Due regole che vale la pena non violare:
   `Math.max` su valori di metrica o una formattazione `mm:ss`.
 - **Lo snake_case si ferma ai mapper** (`src/lib/supabase/mappers.ts`). Fuori dal
   data-access layer esiste solo il modello camelCase di `src/domain/types.ts`.
+- **Nessuna stringa visibile scritta nel componente**: tutto passa da `t()`, e
+  gli errori viaggiano come `AppError` con una chiave di traduzione.
 
 ## Test su mobile
 

@@ -18,11 +18,22 @@ Env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. **Mai committare segreti**; 
 
 ## Convenzioni non negoziabili
 
-- **DB `snake_case`, TypeScript `camelCase`**, con un mapper al data-access layer. Nomi parlanti in inglese; prosa/UI in italiano vanno bene.
+- **DB `snake_case`, TypeScript `camelCase`**, con un mapper al data-access layer. Nomi parlanti in inglese.
+- **L'app è bilingue: italiano e inglese.** Sostituisce la vecchia regola "UI in italiano" (e §3 dello spec). Vedi la sezione qui sotto.
 - **TypeScript strict.** Niente `any` non giustificato.
 - **Il registro metriche (§4 dello spec) è l'UNICA fonte della semantica delle metriche**: best (min/max), direzione del trend, formatter, widget di input, tipo di grafico. **Non spargere** questa logica altrove — era il difetto centrale del prototipo.
 - **Program = template, Workout = istanza.** Non mescolarli.
 - **Multi-utente via RLS**: ogni tabella ha `user_id`, ogni accesso è già scoperto per utente.
+
+## Localizzazione (IT / EN)
+
+- **Nessuna stringa visibile all'utente scritta nel componente.** Ogni testo passa da `t('chiave')` (`src/lib/i18n/`). Vale anche per messaggi di errore, `aria-label`, `title` e `placeholder`.
+- **`src/lib/i18n/locales/it.ts` è il locale di riferimento**: le sue chiavi definiscono `TranslationKey`, e `en.ts` è tipizzato su quello. Aggiungere una stringa solo in italiano **rompe il build** — è voluto.
+- **Gli errori viaggiano come `AppError` con una chiave**, non come frase già scritta: il livello dati non conosce la lingua. La vista traduce con `describeError(error, t)`. Così cambiare lingua ridipinge anche gli errori già a schermo.
+- **Il registro metriche espone `labelKey`/`unitKey`/`captionKey`**, non stringhe. Resta l'unica fonte della semantica: dice *quale* etichetta, l'i18n dice *come si scrive*.
+- **I dati dell'utente non si traducono**: nomi esercizi, note e varianti restano come sono stati scritti. **Eccezione: `category`**, che nel DB contiene una chiave neutra (`strength_sets`, non "Forza") tradotta a video da `src/domain/categories.ts`. Una chiave sconosciuta si mostra grezza, non fa errore.
+- **Fallback = inglese** (scelta esplicita → lingua del dispositivo → inglese): serve a chi non parla né italiano né inglese. Vale anche per `index.html` e il manifest, che si vedono prima che React scelga la lingua.
+- Testa entrambe le lingue: l'inglese è mediamente più corto, l'italiano più lungo — è l'italiano che fa scoppiare i layout a 360 px.
 
 ## Metodo di lavoro
 
