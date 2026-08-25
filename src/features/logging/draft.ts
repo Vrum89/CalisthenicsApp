@@ -38,6 +38,15 @@ export interface DraftEntry {
   readonly addedWeightKg: number | null;
   readonly variant: string;
   readonly notes: string;
+  /**
+   * Voci con la stessa chiave sono un superset (spec §5.6): esercizi distinti —
+   * catalogo, serie e linea in dashboard separati — legati solo dall'essere
+   * eseguiti a round alternati, col riposo dopo l'ultimo del round.
+   *
+   * `null` = esercizio a se'. E' un raggruppamento leggero: due colonne
+   * nullable, nessuna tabella nuova.
+   */
+  readonly supersetKey: string | null;
 }
 
 export interface WorkoutDraft {
@@ -106,7 +115,101 @@ export function draftEntryFor(exercise: Exercise, last: WorkoutExercise | null):
     addedWeightKg: last?.addedWeightKg ?? null,
     variant: last?.variant ?? '',
     notes: '',
+    supersetKey: null,
   };
+}
+
+// --- Superset ---------------------------------------------------------------
+
+/**
+ * Un gruppo di voci in focus: un esercizio solo, oppure un superset.
+ *
+ * La navigazione della schermata di logging va per gruppi, non per voci: un
+ * superset si esegue alternando i suoi esercizi, quindi mostrarli uno per volta
+ * costringerebbe ad andare avanti e indietro a ogni round.
+ */
+export interface DraftGroup {
+  /** `null` per un esercizio singolo. */
+  readonly supersetKey: string | null;
+  readonly entries: readonly DraftEntry[];
+}
+
+/** Raggruppa mantenendo l'ordine: un gruppo sta dove sta la sua prima voce. */
+export function groupEntries(entries: readonly DraftEntry[]): DraftGroup[] {
+  const groups: DraftGroup[] = [];
+  const indexByKey = new Map<string, number>();
+
+  for (const entry of entries) {
+    if (entry.supersetKey === null) {
+      groups.push({ supersetKey: null, entries: [entry] });
+      continue;
+    }
+
+    const existing = indexByKey.get(entry.supersetKey);
+    if (existing === undefined) {
+      indexByKey.set(entry.supersetKey, groups.length);
+      groups.push({ supersetKey: entry.supersetKey, entries: [entry] });
+    } else {
+      const group = groups[existing];
+      if (group) groups[existing] = { ...group, entries: [...group.entries, entry] };
+    }
+  }
+
+  return groups;
+}
+
+/**
+ * Il numero di round di un superset: quante volte si gira il giro.
+ *
+ * E' il massimo fra le serie dei suoi esercizi, non la somma: "5 pull + 10
+ * piegamenti x5" sono 5 round da due esercizi, cioe' 10 serie in tutto.
+ */
+export function roundCount(group: DraftGroup): number {
+  return group.entries.reduce((most, entry) => Math.max(most, entry.sets.length), 0);
+}
+
+/** Il round in corso: il primo in cui qualcosa e' ancora da fare. */
+export function currentRound(group: DraftGroup): number {
+  const rounds = roundCount(group);
+  for (let round = 0; round < rounds; round += 1) {
+    if (group.entries.some((entry) => !entry.sets[round]?.done)) return round;
+  }
+  return Math.max(0, rounds - 1);
+}
+
+/** True quando ogni esercizio del gruppo ha concluso questo round. */
+export function roundComplete(group: DraftGroup, round: number): boolean {
+  return group.entries.every((entry) => entry.sets[round]?.done === true);
+}
+
+/**
+ * Porta tutte le voci del gruppo allo stesso numero di serie.
+ *
+ * Un superset e' fatto di round: se un esercizio ha 5 serie e l'altro 3, il
+ * quarto round sarebbe mezzo vuoto. Le serie mancanti si aggiungono ricalcando
+ * l'ultima, che e' quello che si sta facendo di fatto.
+ */
+export function alignRounds(entries: readonly DraftEntry[]): DraftEntry[] {
+  const rounds = entries.reduce((most, entry) => Math.max(most, entry.sets.length), 0);
+
+  return entries.map((entry) => {
+    if (entry.sets.length >= rounds) return entry;
+    const last = entry.sets.at(-1);
+    return {
+      ...entry,
+      sets: [
+        ...entry.sets,
+        ...Array.from({ length: rounds - entry.sets.length }, () => ({
+          reps: last?.reps ?? DEFAULT_OPEN_REPS,
+          done: false,
+        })),
+      ],
+    };
+  });
+}
+
+export function newSupersetKey(): string {
+  return crypto.randomUUID();
 }
 
 // --- Modifiche alle serie ---------------------------------------------------

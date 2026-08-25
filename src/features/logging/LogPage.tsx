@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   ChevronLeft,
   ChevronRight,
+  Link2,
   LoaderCircle,
   Plus,
   Save,
@@ -23,7 +24,14 @@ import {
 import { clearVariant, renameVariant } from '@/features/exercises/variantsRepository';
 import { useExercises } from '@/features/exercises/useExercises';
 import { useWorkoutHistory } from '@/features/history/useWorkoutHistory';
-import { draftEntryFor, filledEntries } from '@/features/logging/draft';
+import {
+  alignRounds,
+  draftEntryFor,
+  filledEntries,
+  groupEntries,
+  newSupersetKey,
+  type DraftEntry,
+} from '@/features/logging/draft';
 import { ExerciseCard } from '@/features/logging/ExerciseCard';
 import { ExercisePicker } from '@/features/logging/ExercisePicker';
 import {
@@ -34,6 +42,7 @@ import {
 } from '@/features/logging/lastPerformance';
 import type { NewExerciseDraft } from '@/features/logging/NewExerciseForm';
 import { RestTimerBar } from '@/features/logging/RestTimerBar';
+import { SupersetCard } from '@/features/logging/SupersetCard';
 import { WorkoutDateField } from '@/features/logging/WorkoutDateField';
 import { saveWorkout } from '@/features/logging/workoutRepository';
 import { REST_MODE, useRestTimer, windowMode } from '@/features/logging/useRestTimer';
@@ -68,6 +77,9 @@ export function LogPage() {
   const timer = useRestTimer();
 
   const [focus, setFocus] = useState(0);
+  // Quando e' valorizzata, l'esercizio scelto nel picker si aggancia a questa
+  // voce invece di aggiungersi in fondo.
+  const [linkingTo, setLinkingTo] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -75,6 +87,8 @@ export function LogPage() {
 
   const { draft } = draftController;
   const entries = draft.entries;
+  // La navigazione va per gruppi: un superset e' un solo passo, non due.
+  const groups = groupEntries(entries);
   const performances = lastPerformances(history.data);
   const variantsByExercise = knownVariants(history.data);
   const schemesByExercise = knownSchemes(history.data);
@@ -82,20 +96,58 @@ export function LogPage() {
 
   // L'indice si tiene dentro i bordi qui, non a ogni rimozione: cosi' non c'e'
   // un istante in cui punta a una voce che non esiste piu'.
-  const index = Math.min(focus, Math.max(0, entries.length - 1));
-  const current = entries[index] ?? null;
+  const index = Math.min(focus, Math.max(0, groups.length - 1));
+  const currentGroup = groups[index] ?? null;
+  const current = currentGroup?.entries[0] ?? null;
   const ready = filledEntries(draft).length > 0;
+
+  /**
+   * Aggiunge una voce alla bozza: in fondo, oppure dentro il superset ancorato a
+   * `linkingTo`. Agganciare allinea i round, perche' un superset con 5 serie di
+   * uno e 3 dell'altro avrebbe due giri mezzi vuoti.
+   */
+  function addToDraft(entry: DraftEntry) {
+    const anchor = linkingTo === null ? null : entries.find((e) => e.id === linkingTo);
+    if (!anchor) {
+      draftController.addEntry(entry);
+      setFocus(groups.length);
+      return;
+    }
+
+    const key = anchor.supersetKey ?? newSupersetKey();
+    // La chiave va messa anche sull'ancora: agganciando il secondo esercizio
+    // nasce il superset, e finche' era da sola quella voce non ne aveva una.
+    const members = alignRounds([
+      ...entries
+        .filter((e) => e.supersetKey === key || e.id === anchor.id)
+        .map((e) => ({ ...e, supersetKey: key })),
+      { ...entry, supersetKey: key },
+    ]);
+
+    for (const member of members) {
+      if (member.id === entry.id) {
+        draftController.addEntry(member);
+      } else {
+        draftController.updateEntry(member.id, () => member);
+      }
+    }
+  }
 
   async function handleCreateExercise(exercise: NewExerciseDraft) {
     if (!user) return;
     const created = await createExercise({ ...exercise, userId: user.id, isActive: true });
-    draftController.addEntry(draftEntryFor(created, null));
-    setFocus(entries.length);
+    addToDraft(draftEntryFor(created, null));
+    setLinkingTo(null);
     setPicking(false);
     setSaved(false);
     // Il catalogo si ricarica dopo: l'esercizio e' gia' nella bozza, e
     // aspettare la lista completa terrebbe fermo chi si sta allenando.
     exercises.reload();
+  }
+
+  /** Stacca una voce dal suo superset: torna un esercizio come gli altri. */
+  function handleUnlink(entryId: string) {
+    draftController.updateEntry(entryId, (entry) => ({ ...entry, supersetKey: null }));
   }
 
   async function handleDeleteExercise(exercise: Exercise) {
@@ -239,28 +291,61 @@ export function LogPage() {
           </div>
         ) : (
           <>
-            <ExerciseCard
-              key={current.id}
-              entry={current}
-              last={performances.get(current.exerciseId) ?? null}
-              onChange={(change) => {
-                draftController.updateEntry(current.id, change);
-                setSaved(false);
-              }}
-              onRemove={() => {
-                draftController.removeEntry(current.id);
-              }}
-              variants={variantsByExercise.get(current.exerciseId) ?? []}
-              schemes={schemesByExercise.get(current.exerciseId) ?? []}
-              onSetCompleted={() => {
-                timer.start(REST_MODE);
-              }}
-              onStartWindow={(seconds) => {
-                timer.start(windowMode(seconds));
-              }}
-            />
+            {currentGroup !== null && currentGroup.entries.length > 1 ? (
+              <SupersetCard
+                key={currentGroup.supersetKey}
+                group={currentGroup}
+                variants={variantsByExercise}
+                onChangeEntry={(entryId, change) => {
+                  draftController.updateEntry(entryId, change);
+                  setSaved(false);
+                }}
+                onUnlink={handleUnlink}
+                onRoundComplete={() => {
+                  timer.start(REST_MODE);
+                }}
+              />
+            ) : (
+              <ExerciseCard
+                key={current.id}
+                entry={current}
+                last={performances.get(current.exerciseId) ?? null}
+                onChange={(change) => {
+                  draftController.updateEntry(current.id, change);
+                  setSaved(false);
+                }}
+                onRemove={() => {
+                  draftController.removeEntry(current.id);
+                }}
+                variants={variantsByExercise.get(current.exerciseId) ?? []}
+                schemes={schemesByExercise.get(current.exerciseId) ?? []}
+                onSetCompleted={() => {
+                  timer.start(REST_MODE);
+                }}
+                onStartWindow={(seconds) => {
+                  timer.start(windowMode(seconds));
+                }}
+              />
+            )}
 
-            {entries.length > 1 && (
+            {/* L'aggancio parte da un esercizio gia' in lista: "questo, insieme
+                a…". E' l'unico modo in cui un superset nasce davvero — non
+                esiste un superset vuoto da riempire. */}
+            {current.metricType === 'sets' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLinkingTo(current.id);
+                  setPicking(true);
+                }}
+                className="tap-target flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 px-4 text-sm font-medium text-slate-300 hover:bg-slate-900"
+              >
+                <Link2 aria-hidden className="size-4" />
+                {t('log.superset.link')}
+              </button>
+            )}
+
+            {groups.length > 1 && (
               <div className="flex items-center justify-center gap-2">
                 <button
                   type="button"
@@ -274,12 +359,12 @@ export function LogPage() {
                   <ChevronLeft aria-hidden className="size-5" />
                 </button>
                 <span className="text-sm text-slate-400 tabular-nums">
-                  {t('log.position', { index: index + 1, total: entries.length })}
+                  {t('log.position', { index: index + 1, total: groups.length })}
                 </span>
                 <button
                   type="button"
                   aria-label={t('log.next')}
-                  disabled={index === entries.length - 1}
+                  disabled={index === groups.length - 1}
                   onClick={() => {
                     setFocus(index + 1);
                   }}
@@ -363,8 +448,8 @@ export function LogPage() {
           usage={usageByExercise}
           onPick={(exercise, variant) => {
             const entry = draftEntryFor(exercise, performances.get(exercise.id)?.entry ?? null);
-            draftController.addEntry(variant === undefined ? entry : { ...entry, variant });
-            setFocus(entries.length);
+            addToDraft(variant === undefined ? entry : { ...entry, variant });
+            setLinkingTo(null);
             setPicking(false);
             setSaved(false);
           }}
@@ -376,6 +461,7 @@ export function LogPage() {
           onClearVariant={handleClearVariant}
           onClose={() => {
             setPicking(false);
+            setLinkingTo(null);
           }}
         />
       )}

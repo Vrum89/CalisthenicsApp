@@ -43,9 +43,16 @@ export async function saveWorkout(draft: WorkoutDraft, userId: string): Promise<
   if (workoutError) throw toAppError(workoutError, 'error.workout.save');
   const workout = toWorkout(workoutRow);
 
+  // L'ordine dentro il superset e' quello in cui gli esercizi stanno nella
+  // bozza, cioe' quello in cui li si esegue nel round.
+  const supersetOrders = new Map<string, number>();
+
   const { error: entriesError } = await supabase.from('workout_exercises').insert(
     entries.map((entry, index) => {
       const reps = doneReps(entry);
+      const key = entry.supersetKey;
+      const order = key === null ? null : (supersetOrders.get(key) ?? 0);
+      if (key !== null) supersetOrders.set(key, (order ?? 0) + 1);
       return fromWorkoutExercise({
         userId,
         workoutId: workout.id,
@@ -59,8 +66,8 @@ export async function saveWorkout(draft: WorkoutDraft, userId: string): Promise<
         notes: entry.notes.trim().length > 0 ? entry.notes.trim() : null,
         isExcluded: false,
         exclusionReason: null,
-        supersetKey: null,
-        supersetOrder: null,
+        supersetKey: key,
+        supersetOrder: order,
       });
     }),
   );
