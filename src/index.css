@@ -66,4 +66,18 @@
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-amber-400;
   }
+
+  /*
+    Recharts marca i propri gruppi interni con `tabindex="-1"`. Toccare il
+    grafico ne mette a fuoco uno, e il browser ci disegna sopra il proprio
+    anello — `outline-style: auto`, che ignora il colore e su fondo scuro
+    esce bianco e spesso. Gruppi diversi hanno riquadri diversi, quindi
+    toccando punti diversi ne comparivano due a turno.
+    `tabindex="-1"` significa "non raggiungibile da tastiera": un anello di
+    focus li' non comunica niente a nessuno. Si toglie solo quando il focus
+    NON e' da tastiera, cosi' la navigazione a tab resta visibile ovunque.
+  */
+  .recharts-wrapper :focus:not(:focus-visible) {
+    outline: none;
+  }
 }

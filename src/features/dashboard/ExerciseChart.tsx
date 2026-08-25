@@ -17,7 +17,11 @@ import type { MetricType } from '@/domain/types';
 import { NO_VARIANT, variantLabel, type VariantGroup } from '@/domain/variants';
 import { formatAxisDate, formatDate } from '@/lib/dates';
 import { useTranslation } from '@/lib/i18n/useTranslation';
-import { SINGLE_SERIES_COLOR, variantColor } from '@/features/dashboard/variantPalette';
+import {
+  MAX_COLOURED_VARIANTS,
+  SINGLE_SERIES_COLOR,
+  variantColor,
+} from '@/features/dashboard/variantPalette';
 
 const SKY = '#38bdf8';
 const GRID = '#334155';
@@ -29,7 +33,8 @@ interface ChartPoint {
   label: string;
   full: string;
   value: number;
-  variantIndex: number;
+  /** Colore gia' risolto, ripiegamento incluso: il tooltip non ricalcola. */
+  variantColorHex: string;
   variant: string | null;
   weight: number | null;
   display: string;
@@ -73,7 +78,7 @@ function ChartTooltip({
           <span
             aria-hidden
             className="size-2 shrink-0 rounded-full"
-            style={{ backgroundColor: variantColor(point.variantIndex) }}
+            style={{ backgroundColor: point.variantColorHex }}
           />
           {point.variant}
         </div>
@@ -115,12 +120,23 @@ export function ExerciseChart({
   const withWeight = chartKind === 'bars-plus-weight-line';
 
   const indexOfVariant = new Map(variants.map((group, index) => [group.variant, index]));
+
+  /**
+   * Oltre il limite di colori distinguibili le varianti confluiscono in una
+   * serie sola, grigia. Dare a due condizioni lo stesso colore ma linee diverse
+   * direbbe che sono distinte mostrandole identiche: meglio dichiararle "altre"
+   * e lasciare che siano i chip a isolarle una per una.
+   */
+  const seriesIndex = (variantIndex: number): number =>
+    Math.min(variantIndex, MAX_COLOURED_VARIANTS);
+  const seriesCount = Math.min(variants.length, MAX_COLOURED_VARIANTS + 1);
+  const overflowCount = variants.length - MAX_COLOURED_VARIANTS;
   // Colori solo quando c'e' davvero piu' di una condizione e nessuna e' scelta:
   // con una serie sola una legenda non aggiungerebbe niente.
   const coloured = variants.length > 1 && selectedVariant === null;
 
   const seriesColor = (variantIndex: number): string =>
-    variants.length > 1 ? variantColor(variantIndex) : SINGLE_SERIES_COLOR;
+    variants.length > 1 ? variantColor(seriesIndex(variantIndex)) : SINGLE_SERIES_COLOR;
 
   const data: ChartPoint[] = points.map((point) => {
     const variant = point.entry.variant ?? NO_VARIANT;
@@ -129,8 +145,9 @@ export function ExerciseChart({
 
     const perVariant: Record<string, number | null> = {};
     if (coloured) {
-      for (let i = 0; i < variants.length; i += 1) {
-        perVariant[`series${String(i)}`] = i === variantIndex ? value : null;
+      const series = seriesIndex(variantIndex);
+      for (let i = 0; i < seriesCount; i += 1) {
+        perVariant[`series${String(i)}`] = i === series ? value : null;
       }
     }
 
@@ -143,7 +160,7 @@ export function ExerciseChart({
           ? ` (${t('dashboard.originalDate', { date: point.originalDate })})`
           : ''),
       value,
-      variantIndex,
+      variantColorHex: seriesColor(variantIndex),
       variant: point.entry.variant,
       weight: point.entry.addedWeightKg,
       display: formatMetricValue(t, metricType, point.entry.metricValue),
@@ -206,13 +223,13 @@ export function ExerciseChart({
           {withWeight ? (
             <Bar yAxisId="value" dataKey="value" radius={[3, 3, 0, 0]} maxBarSize={18}>
               {data.map((point) => (
-                <Cell key={point.entryId} fill={seriesColor(point.variantIndex)} />
+                <Cell key={point.entryId} fill={point.variantColorHex} />
               ))}
             </Bar>
           ) : coloured ? (
-            variants.map((group, index) => (
+            Array.from({ length: seriesCount }, (_, index) => (
               <Line
-                key={group.variant}
+                key={index}
                 yAxisId="value"
                 dataKey={`series${String(index)}`}
                 stroke={variantColor(index)}
@@ -259,7 +276,7 @@ export function ExerciseChart({
               y={selected.value}
               r={6}
               fill="#f8fafc"
-              stroke={seriesColor(selected.variantIndex)}
+              stroke={selected.variantColorHex}
               strokeWidth={2}
             />
           )}
@@ -268,7 +285,7 @@ export function ExerciseChart({
 
       {coloured && (
         <ul className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1">
-          {variants.map((group, index) => (
+          {variants.slice(0, MAX_COLOURED_VARIANTS).map((group, index) => (
             <li key={group.variant} className="flex items-center gap-1.5 text-xs text-slate-300">
               <span
                 aria-hidden
@@ -278,6 +295,16 @@ export function ExerciseChart({
               {variantLabel(t, group.variant)}
             </li>
           ))}
+          {overflowCount > 0 && (
+            <li className="flex items-center gap-1.5 text-xs text-slate-300">
+              <span
+                aria-hidden
+                className="size-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: variantColor(MAX_COLOURED_VARIANTS) }}
+              />
+              {t('dashboard.variantOther', { count: overflowCount })}
+            </li>
+          )}
         </ul>
       )}
 

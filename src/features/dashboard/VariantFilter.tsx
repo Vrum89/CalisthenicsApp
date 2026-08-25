@@ -1,5 +1,5 @@
 import { variantLabel, type VariantGroup } from '@/domain/variants';
-import { variantColor } from '@/features/dashboard/variantPalette';
+import { MAX_COLOURED_VARIANTS, variantColor } from '@/features/dashboard/variantPalette';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
 /**
@@ -64,7 +64,7 @@ export function VariantFilter({
               <span
                 aria-hidden
                 className="size-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: variantColor(index) }}
+                style={{ backgroundColor: variantColor(Math.min(index, MAX_COLOURED_VARIANTS)) }}
               />
               {variantLabel(t, group.variant)}
               <span className="text-xs text-slate-500 tabular-nums">{group.count}</span>
