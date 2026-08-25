@@ -13,7 +13,11 @@
 const FREQUENCY_HZ = 880;
 const DURATION_S = 0.18;
 const PEAK_GAIN = 0.25;
-const VIBRATION_MS = 120;
+/**
+ * Pattern e non una vibrazione secca: due colpi si distinguono dalle notifiche
+ * di tutto il resto, e con il telefono appoggiato per terra si sentono.
+ */
+const VIBRATION_PATTERN = [140, 70, 140];
 
 let context: AudioContext | null = null;
 
@@ -62,9 +66,16 @@ export function beep(): void {
   oscillator.stop(now + DURATION_S);
 }
 
-/** Vibrazione, dove esiste. Su iOS non esiste e non e' un problema. */
+/**
+ * Vibrazione, dove esiste. Su iOS non esiste e non e' un problema.
+ *
+ * Da sapere: la Vibration API viene annullata dal browser quando il documento
+ * e' nascosto — schermo spento, app in background, altra scheda davanti. E'
+ * nella specifica, non e' un bug aggirabile: se il telefono e' in tasca resta
+ * solo il beep. Per questo il suono viene prima, e la vibrazione e' un extra.
+ */
 export function vibrate(): void {
-  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-    navigator.vibrate(VIBRATION_MS);
-  }
+  if (typeof navigator === 'undefined' || !('vibrate' in navigator)) return;
+  if (typeof document !== 'undefined' && document.hidden) return;
+  navigator.vibrate(VIBRATION_PATTERN);
 }

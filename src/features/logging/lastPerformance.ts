@@ -42,6 +42,38 @@ export function lastPerformances(history: WorkoutHistory): Map<string, LastPerfo
 }
 
 /**
+ * Le condizioni gia' usate per un esercizio, dalla piu' recente.
+ *
+ * Servono a proporle nel campo Condizione: sono testo libero — deve restare
+ * possibile scriverne una nuova, perche' le condizioni le inventa l'allenamento,
+ * non noi — ma riscrivere "materassino + disco 10 kg" a mano ogni volta e' il
+ * modo migliore per ritrovarsi tre grafie della stessa cosa e tre linee separate
+ * nel grafico.
+ */
+export function knownVariants(history: WorkoutHistory): Map<string, string[]> {
+  const dateByWorkout = new Map(history.workouts.map((workout) => [workout.id, workout.workoutDate]));
+  const seen = new Map<string, Map<string, string>>();
+
+  for (const entry of history.entries) {
+    const variant = entry.variant;
+    const date = dateByWorkout.get(entry.workoutId);
+    if (variant === null || variant === '' || date === undefined) continue;
+
+    const perExercise = seen.get(entry.exerciseId) ?? new Map<string, string>();
+    const previous = perExercise.get(variant);
+    if (previous === undefined || date > previous) perExercise.set(variant, date);
+    seen.set(entry.exerciseId, perExercise);
+  }
+
+  return new Map(
+    [...seen].map(([exerciseId, variants]) => [
+      exerciseId,
+      [...variants].sort((a, b) => b[1].localeCompare(a[1])).map(([variant]) => variant),
+    ]),
+  );
+}
+
+/**
  * Riassunto in una riga: "5x6 · 30 rip · +5 kg · materassino".
  *
  * Lo scheme c'e' solo se il database lo aveva: nella modalita' aperta non esiste

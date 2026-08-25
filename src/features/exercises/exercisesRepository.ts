@@ -1,7 +1,7 @@
 import type { Exercise } from '@/domain/types';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { toAppError } from '@/lib/supabase/errors';
-import { toExercise } from '@/lib/supabase/mappers';
+import { fromExercise, toExercise, type NewExercise } from '@/lib/supabase/mappers';
 
 /**
  * Catalogo esercizi dell'utente.
@@ -22,4 +22,26 @@ export async function listExercises(): Promise<Exercise[]> {
   if (error) throw toAppError(error, 'error.exercises.load');
 
   return data.map(toExercise);
+}
+
+/**
+ * Aggiunge un esercizio al catalogo.
+ *
+ * Il catalogo nasce da un seed, ma non e' una lista chiusa: un esercizio nuovo
+ * si inventa mentre ci si allena, e doverlo aggiungere da un'altra schermata
+ * (o peggio, dalla dashboard di Supabase) vorrebbe dire interrompere
+ * l'allenamento. Per questo si crea da dentro il picker, dove serve.
+ *
+ * `metricType` non e' modificabile dopo: decide come si legge il numero, e
+ * cambiarlo reinterpreterebbe tutto lo storico di quell'esercizio.
+ */
+export async function createExercise(exercise: NewExercise): Promise<Exercise> {
+  const { data, error } = await getSupabaseClient()
+    .from('exercises')
+    .insert(fromExercise(exercise))
+    .select()
+    .single();
+
+  if (error) throw toAppError(error, 'error.exercises.create');
+  return toExercise(data);
 }

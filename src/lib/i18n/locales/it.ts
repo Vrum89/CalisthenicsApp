@@ -134,12 +134,21 @@ export const it = {
   'log.stopwatch.stop': 'Ferma',
   'log.stopwatch.reset': 'Azzera il cronometro',
   'log.stopwatch.manual': 'Inserisci il tempo a mano',
+  'log.window.title': 'Finestra',
+  'log.window.over': 'Tempo scaduto',
+  'log.window.start': 'Avvia {time}',
+  'log.timer.dismiss': 'Chiudi il timer',
+  'log.create.open': 'Crea un esercizio nuovo',
+  'log.create.named': 'Crea «{name}»',
+  'log.create.name': 'Nome',
+  'log.create.category': 'Categoria',
+  'log.create.metric': 'Come si misura',
+  'log.create.cancel': 'Annulla',
+  'log.create.submit': 'Crea e aggiungi',
   'log.rest.title': 'Riposo',
   'log.rest.overtime': 'Riposo extra',
-  'log.rest.skip': 'Chiudi il riposo',
   'log.picker.title': 'Scegli un esercizio',
   'log.picker.search': 'Cerca',
-  'log.picker.empty': 'Nessun esercizio trovato.',
   'log.picker.close': 'Chiudi',
 
   'bodyWeight.title': 'Peso corporeo',
@@ -180,6 +189,11 @@ export const it = {
   'metric.note.label': 'Nota',
   'metric.note.caption': 'Voce descrittiva, senza valore numerico',
 
+  'metric.input.setCheckboxes': 'Caselle da spuntare, una per serie.',
+  'metric.input.number': 'Un numero solo.',
+  'metric.input.stopwatch': 'Un cronometro che parte e si ferma.',
+  'metric.input.text': 'Testo libero: resta nel diario, fuori dai grafici.',
+
   'metric.unit.reps': 'rip',
   'metric.unit.minutes': 'min',
   'metric.unit.seconds': 's',
@@ -201,6 +215,7 @@ export const it = {
   'error.db.permissions':
     'Permessi mancanti sulla tabella. Controlla di aver eseguito anche la sezione GRANT di supabase/schema.sql.',
   'error.db.expiredSession': 'Sessione scaduta. Esci e rientra con un nuovo magic link.',
+  'error.exercises.create': 'Non è stato possibile creare l’esercizio. {detail}',
   'error.exercises.load': 'Non è stato possibile leggere il catalogo esercizi. {detail}',
 
   'error.domain.unknownMetricType': 'Tipo di metrica non riconosciuto dal dominio: «{value}».',
