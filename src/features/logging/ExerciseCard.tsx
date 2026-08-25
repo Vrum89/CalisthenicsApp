@@ -1,5 +1,11 @@
 import { Timer, Trash2 } from 'lucide-react';
-import { formatMetricValue, metricConfig, metricLabel, metricUnit } from '@/domain/metrics';
+import {
+  countdownFor,
+  formatMetricValue,
+  metricConfig,
+  metricLabel,
+  metricUnit,
+} from '@/domain/metrics';
 import type { DraftEntry } from '@/features/logging/draft';
 import { describePerformance, type LastPerformance } from '@/features/logging/lastPerformance';
 import { NumberStepper } from '@/features/logging/NumberStepper';
@@ -43,12 +49,11 @@ export function ExerciseCard({
   onStartWindow: (seconds: number) => void;
 }) {
   const { t, language } = useTranslation();
-  const { inputKind, countdownSeconds } = metricConfig(entry.metricType);
-  // Il registro dice SE questa metrica si misura dentro una finestra e quanto
-  // dura di solito; l'esercizio puo' averne una sua. Il `??` copre anche le
-  // bozze salvate prima che il campo esistesse.
-  const windowSeconds =
-    countdownSeconds === undefined ? undefined : (entry.windowSeconds ?? countdownSeconds);
+  const { inputKind } = metricConfig(entry.metricType);
+  // Quanto duri la finestra lo decide il registro metriche: puo' essere un
+  // default, la durata scelta per questo esercizio, o il numero che si sta
+  // inserendo (EMOM). Qui non si sa quale dei tre, ed e' giusto cosi'.
+  const windowSeconds = countdownFor(entry.metricType, entry.windowSeconds ?? null, entry.value);
 
   return (
     <section className="space-y-3 rounded-2xl border border-slate-700 bg-slate-800/40 p-3">
@@ -100,7 +105,7 @@ export function ExerciseCard({
               minuti non ha risposta. Quanto duri lo dicono il registro metriche
               (di default) e l'esercizio (se ne ha una sua); qui c'e' solo il
               bottone per farla partire. */}
-          {windowSeconds !== undefined && (
+          {windowSeconds !== null && (
             <button
               type="button"
               onClick={() => {

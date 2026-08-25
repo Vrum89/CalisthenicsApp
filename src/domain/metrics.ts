@@ -31,14 +31,17 @@ export interface MetricConfig {
   captionKey: TranslationKey;
   chartKind: 'bars-plus-weight-line' | 'line' | 'none';
   /**
-   * Finestra di tempo entro cui la metrica va misurata, in secondi.
+   * Finestra di tempo entro cui la metrica va misurata.
    *
-   * Sta qui e non sull'esercizio perche' e' parte della definizione della
-   * metrica: `reps` significa "quante ripetizioni in 10 minuti" (spec §5.4), non
-   * "quante ripetizioni". Senza il conto alla rovescia il numero non vuol dire
-   * niente, e finora andava tenuto a mente con un cronometro a parte.
+   * Un numero = i secondi di default: `reps` significa "quante ripetizioni in 10
+   * minuti" (spec §5.4), non "quante ripetizioni", e senza il conto alla
+   * rovescia il numero non vuol dire niente. `'metric-value'` = la finestra E' il
+   * valore inserito, com'e' per un EMOM da 8 minuti.
+   *
+   * Sta qui, non sull'esercizio, perche' e' parte della definizione della
+   * metrica; il singolo esercizio puo' solo scostarsene con `windowSeconds`.
    */
-  countdownSeconds?: number;
+  countdownSeconds?: number | 'metric-value';
 }
 
 /** Formattazione mm:ss, ereditata dal prototipo (`mmss`). */
@@ -90,6 +93,8 @@ export const METRIC_CONFIG: Record<MetricType, MetricConfig> = {
     formatValue: numberWithUnit,
     captionKey: 'metric.minutes.caption',
     chartKind: 'line',
+    // Un EMOM dura quanto dice il numero: la finestra e' il valore stesso.
+    countdownSeconds: 'metric-value',
   },
   time: {
     labelKey: 'metric.time.label',
@@ -168,6 +173,25 @@ export function formatMetricValue(
  */
 export function formatMetricTick(metricType: MetricType, value: number): string {
   return metricConfig(metricType).formatValue(value, '').trim();
+}
+
+/**
+ * I secondi del conto alla rovescia per una voce, o `null` se non ne ha uno.
+ *
+ * Regola in un posto solo, come tutto il resto della semantica delle metriche:
+ * la vista chiede "quanti secondi" e non sa se la risposta venga dal registro,
+ * dall'esercizio o dal numero che si sta inserendo.
+ */
+export function countdownFor(
+  metricType: MetricType,
+  windowSeconds: number | null,
+  value: number | null,
+): number | null {
+  const declared = metricConfig(metricType).countdownSeconds;
+  if (declared === undefined) return null;
+  // Un EMOM di zero minuti non e' una finestra: e' un campo ancora vuoto.
+  if (declared === 'metric-value') return value !== null && value > 0 ? value * 60 : null;
+  return windowSeconds ?? declared;
 }
 
 /**

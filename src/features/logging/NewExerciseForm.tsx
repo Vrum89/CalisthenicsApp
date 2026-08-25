@@ -64,7 +64,10 @@ export function NewExerciseForm({
   const [error, setError] = useState<unknown>(null);
 
   const metric = metricType ?? defaultMetricFor(category);
-  const defaultWindow = metricConfig(metric).countdownSeconds;
+  const declared = metricConfig(metric).countdownSeconds;
+  // `'metric-value'` = la durata e' il numero che si inserisce allenandosi
+  // (EMOM): non c'e' niente da decidere adesso.
+  const defaultWindow = typeof declared === 'number' ? declared : undefined;
   // I dieci minuti erano un'assunzione del registro: restano il default, ma un
   // "max ripetizioni" da otto minuti e' comunque un "max ripetizioni".
   const minutes = windowMinutes ?? (defaultWindow === undefined ? null : defaultWindow / 60);
