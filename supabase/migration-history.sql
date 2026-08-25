@@ -50,6 +50,7 @@ begin
     (target_user, 'Circuito: 60 bar dip (larga) + 30 pull up', 'time_circuits', 'time'),
     (target_user, 'Circuito: 40 bar dip + 25 chin up', 'time_circuits', 'time'),
     (target_user, 'Circuito: 20 chin up + 20 dip @5kg', 'time_circuits', 'time'),
+    (target_user, 'Circuito: 20 chin up + 20 dip', 'time_circuits', 'time'),
     (target_user, 'Massimale: Pull up', 'max_effort', 'reps'),
     (target_user, 'Massimale: Chin up', 'max_effort', 'reps'),
     (target_user, 'Massimale: Dip', 'max_effort', 'reps'),

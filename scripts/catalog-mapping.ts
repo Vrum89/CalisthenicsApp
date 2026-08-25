@@ -44,6 +44,10 @@ export const CATALOG: readonly CatalogEntry[] = [
   { name: 'Circuito: 60 bar dip (larga) + 30 pull up', category: 'time_circuits', metricType: 'time' },
   { name: 'Circuito: 40 bar dip + 25 chin up', category: 'time_circuits', metricType: 'time' },
   { name: 'Circuito: 20 chin up + 20 dip @5kg', category: 'time_circuits', metricType: 'time' },
+  // Stesso circuito a corpo libero. Esiste come voce separata perche' per una
+  // metrica `time` il grafico non mostra la zavorra: due carichi diversi sulla
+  // stessa linea sarebbero indistinguibili. Vedi supabase/mark-exclusions.sql.
+  { name: 'Circuito: 20 chin up + 20 dip', category: 'time_circuits', metricType: 'time' },
 
   { name: 'Massimale: Pull up', category: 'max_effort', metricType: 'reps' },
   { name: 'Massimale: Chin up', category: 'max_effort', metricType: 'reps' },

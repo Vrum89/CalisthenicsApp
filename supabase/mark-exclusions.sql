@@ -1,8 +1,11 @@
 -- =============================================================================
--- Workout Diary — esclusione delle voci non confrontabili (spec §6, §9)
+-- Workout Diary — voci non confrontabili (spec §6, §9)
 --
 -- FACOLTATIVO. Da eseguire solo se sei d'accordo con le quattro decisioni qui
 -- sotto: sono giudizi sui TUOI dati, non correzioni tecniche.
+--
+-- Tre voci vengono escluse dai calcoli; una viene invece SPOSTATA su un altro
+-- esercizio, perche' il dato e' buono, e' solo accostato alla cosa sbagliata.
 --
 -- `is_excluded` non cancella niente. La voce resta visibile in dashboard, in
 -- grigio e con la ragione accanto, ma esce dai calcoli di best, trend e PR.
@@ -40,11 +43,26 @@ begin
   where we.workout_id = w.id and we.exercise_id = e.id and we.user_id = target_user
     and w.workout_date = '2026-03-25' and e.name = 'Circuito: 20 chin up (2s) + 50 bar dip';
 
-  -- 3. 25/04/2026 — Circuito: 20 chin up + 20 dip @5kg eseguito SENZA zavorra.
-  --    Il diario lo dice esplicitamente: non e' confrontabile con il target a 5 kg.
+  -- 3. 25/04/2026 — Circuito: 20 chin up + 20 dip eseguito SENZA zavorra.
+  --
+  --    Qui non si esclude: si sposta. Quel 4:48 e' un tempo vero su un circuito
+  --    vero, solo a corpo libero invece che con 5 kg. Escluderlo avrebbe buttato
+  --    via un dato buono; spostarlo lo rende il primo punto di una serie che
+  --    potra' crescere se rifarai il circuito senza zavorra.
+  --
+  --    Serve un esercizio distinto, non solo added_weight_kg a null: per una
+  --    metrica `time` il grafico e' una linea semplice e non mostra il carico,
+  --    quindi 4:48 a corpo libero e 6:00 con 5 kg finirebbero indistinguibili
+  --    sulla stessa linea. Per gli esercizi a serie il problema non si pone,
+  --    perche' li' il grafico ha gia' la linea della zavorra.
   update workout_exercises we
-  set is_excluded = true,
-      exclusion_reason = 'Eseguito senza zavorra: non confrontabile con il target a 5 kg.'
+  set exercise_id = (
+        select id from exercises
+        where user_id = target_user and name = 'Circuito: 20 chin up + 20 dip'
+      ),
+      added_weight_kg = null,
+      notes = coalesce(we.notes || ' · ', '') ||
+              'Spostato dal circuito con 5 kg: eseguito a corpo libero.'
   from workouts w, exercises e
   where we.workout_id = w.id and we.exercise_id = e.id and we.user_id = target_user
     and w.workout_date = '2026-04-25' and e.name = 'Circuito: 20 chin up + 20 dip @5kg';
