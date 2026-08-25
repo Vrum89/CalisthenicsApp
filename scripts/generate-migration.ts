@@ -26,11 +26,14 @@ import { dirname, join } from 'node:path';
 import { deriveMetricValue } from '@/domain/metrics';
 import type { MetricType, WorkoutType } from '@/domain/types';
 import {
+  ASSISTANCE_AS_WEIGHT,
   CATALOG,
   DEFAULT_SUPERSET,
   NAME_MAP,
   SUPERSET_BY_REST,
   SUPERSET_SOURCE_NAME,
+  VARIANT_BY_DATE,
+  VARIANT_MAP,
   type SupersetPlan,
 } from './catalog-mapping.ts';
 
@@ -178,6 +181,39 @@ function repsFromScheme(scheme: string | undefined): number[] | null {
   return Array.from({ length: sets }, () => reps);
 }
 
+interface ResolvedCondition {
+  readonly variant: string | null;
+  readonly addedWeightKg: number | null;
+}
+
+/**
+ * Variante e carico per una voce, che vanno decisi insieme.
+ *
+ * Per gli esercizi assistiti un peso non e' zavorra ma spessore sotto la testa:
+ * finisce nella variante e il campo del carico resta vuoto, altrimenti l'app
+ * leggerebbe "piu' difficile" dove la realta' e' "piu' facile".
+ */
+function resolveCondition(
+  exerciseName: string,
+  date: string,
+  rawVariant: string | null,
+  rawWeightKg: number | null,
+): ResolvedCondition {
+  const declared = VARIANT_BY_DATE[exerciseName]?.[date];
+  if (declared) return { variant: declared, addedWeightKg: null };
+
+  const assistance = ASSISTANCE_AS_WEIGHT[exerciseName];
+  if (assistance && rawWeightKg !== null && rawWeightKg > 0) {
+    return { variant: assistance(rawWeightKg), addedWeightKg: null };
+  }
+
+  const normalised = rawVariant === null ? null : (VARIANT_MAP[exerciseName]?.[rawVariant] ?? rawVariant);
+  return {
+    variant: normalised,
+    addedWeightKg: assistance ? null : rawWeightKg,
+  };
+}
+
 interface ResolvedSuperset {
   readonly plan: SupersetPlan;
   /** Come si e' arrivati a questa composizione, da scrivere nelle note. */
@@ -301,6 +337,8 @@ function buildFromPrototype(rows: readonly ProtoRow[]): WorkoutDraft[] {
         );
       }
 
+      const condition = resolveCondition(name, date, row.va ?? variant, row.kg ?? null);
+
       entries.push({
         id: uuidV5(`we:${date}:${String(entries.length)}`),
         exerciseName: name,
@@ -308,8 +346,8 @@ function buildFromPrototype(rows: readonly ProtoRow[]): WorkoutDraft[] {
         scheme: row.sc ?? null,
         repsPerSet,
         metricValue: value,
-        addedWeightKg: row.kg ?? null,
-        variant: row.va ?? variant,
+        addedWeightKg: condition.addedWeightKg,
+        variant: condition.variant,
         notes,
         supersetKey: null,
         supersetOrder: null,
@@ -329,6 +367,12 @@ function buildFromSeed(workouts: readonly SeedWorkout[]): WorkoutDraft[] {
     const workoutId = uuidV5(`workout:${workout.date}`);
     const entries = workout.exercises.map((exercise, index): Entry => {
       const { name, variant } = canonical(exercise.exerciseName);
+      const condition = resolveCondition(
+        name,
+        workout.date,
+        exercise.variant ?? variant,
+        exercise.addedWeightKg ?? null,
+      );
       return {
         id: uuidV5(`we:${workout.date}:${String(index)}`),
         exerciseName: name,
@@ -336,8 +380,8 @@ function buildFromSeed(workouts: readonly SeedWorkout[]): WorkoutDraft[] {
         scheme: exercise.scheme ?? null,
         repsPerSet: exercise.repsPerSet ?? null,
         metricValue: exercise.metricValue ?? null,
-        addedWeightKg: exercise.addedWeightKg ?? null,
-        variant: exercise.variant ?? variant,
+        addedWeightKg: condition.addedWeightKg,
+        variant: condition.variant,
         notes: exercise.notes ?? null,
         // Le chiavi del seed sono stringhe locali ("ss-20260724"): vanno
         // trasformate in uuid stabili, uno per superset.
@@ -501,6 +545,18 @@ console.log(`  in superset       ${String(entries.filter((e) => e.supersetKey !=
 console.log(`  con zavorra       ${String(entries.filter((e) => (e.addedWeightKg ?? 0) > 0).length)}`);
 console.log(`Esercizi a catalogo: ${String(CATALOG.length)} (${String(usedNames.size)} usati)`);
 console.log(`Periodo:            ${drafts[0]?.date ?? '—'} → ${drafts.at(-1)?.date ?? '—'}`);
+
+const variantsByExercise = new Map<string, Set<string>>();
+for (const entry of entries) {
+  if (entry.variant === null) continue;
+  const set = variantsByExercise.get(entry.exerciseName) ?? new Set<string>();
+  set.add(entry.variant);
+  variantsByExercise.set(entry.exerciseName, set);
+}
+console.log('\nVarianti per esercizio:');
+for (const [name, set] of [...variantsByExercise].sort((a, b) => b[1].size - a[1].size)) {
+  console.log(`  ${name}: ${[...set].sort().join(' | ')}`);
+}
 
 const unused = CATALOG.filter((entry) => !usedNames.has(entry.name)).map((entry) => entry.name);
 if (unused.length > 0) console.log(`Mai usati:          ${unused.join(', ')}`);

@@ -23,6 +23,24 @@
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
 
     <title>Workout Diary</title>
+
+    <!--
+      Sfondo e color-scheme in linea, non nel foglio di stile.
+
+      Fra il primo paint e il caricamento del CSS il browser dipinge la tela
+      con il proprio bianco di default, e su un'app scura e' un lampo in
+      faccia: si vede a ogni ricarica, e due volte di fila quando il service
+      worker si aggiorna e ricarica da se'. Queste poche righe arrivano prima
+      di qualunque richiesta di rete, quindi il lampo non esiste proprio.
+
+      Il valore e' slate-950, lo stesso che il tema applica poi al body.
+    -->
+    <style>
+      html {
+        color-scheme: dark;
+        background-color: #020617;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

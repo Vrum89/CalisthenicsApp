@@ -38,7 +38,13 @@
 
 @layer base {
   :root {
+    /* color-scheme e background stanno anche in index.html, in linea: qui
+       servono a tenere il tema in un posto solo, li' a non far lampeggiare
+       il bianco prima che questo file sia stato caricato. */
     color-scheme: dark;
+    /* Senza sfondo sull'elemento html la tela del documento resta bianca:
+       lo scroll oltre il bordo e i momenti di ridisegno la mostrerebbero. */
+    @apply bg-slate-950;
     /* Testo base >= 16px, unita' rem (spec §2.5). */
     font-size: 100%;
   }
