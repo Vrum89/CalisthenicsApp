@@ -41,6 +41,7 @@ export const en: Record<TranslationKey, string> = {
   'config.production': 'In production, set the same variables on Vercel.',
 
   'home.session': 'Active session',
+  'home.version': 'version {version} · {date}',
   'home.catalog': 'Exercise catalogue',
   'home.catalogLoading': 'Loading the catalogue…',
   'home.catalogEmpty':
@@ -76,6 +77,7 @@ export const en: Record<TranslationKey, string> = {
   'dashboard.deleteConfirm': 'Delete the entry from {date}? This cannot be undone.',
   'dashboard.deleteCancel': 'No, keep it',
   'dashboard.deleteConfirmed': 'Yes, delete',
+  'dashboard.supersetWith': 'in a superset with {names}',
   'dashboard.excluded': 'Excluded from calculations',
   'dashboard.originalDate': 'originally {date}',
   'dashboard.loading': 'Loading your history…',
@@ -145,6 +147,7 @@ export const en: Record<TranslationKey, string> = {
   'log.manage.merge': 'Merge into "{name}"',
   'log.manage.mergeHint': '"{name}" already exists. Merging moves this one\u2019s {count} entries there and removes this entry: one history again.',
   'log.manage.mergeBlocked': '"{name}" already exists but is measured in {metric}: different numbers would end up on the same line. Pick another name.',
+  'log.manage.openHistory': 'Open the history →',
   'log.manage.applyVariant': 'Apply the new name',
   'log.manage.clearVariant': 'Remove "{name}" from the entries',
   'log.manage.variantHint': 'Renaming a condition rewrites it across every entry of this exercise. Using a name that already exists merges them.',
@@ -162,7 +165,7 @@ export const en: Record<TranslationKey, string> = {
   'log.create.windowHint': 'The time you count the reps within.',
   'log.create.cancel': 'Cancel',
   'log.create.submit': 'Create and add',
-  'log.superset.title': 'Circuit: {parts}',
+  'log.superset.title': 'Superset: {parts}',
   'log.superset.addRound': 'One more round',
   'log.superset.removeRound': 'One less round',
   'log.superset.round': 'Round {index} of {total}',

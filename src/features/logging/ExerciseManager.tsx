@@ -40,6 +40,7 @@ export function ExerciseManager({
   onDelete,
   onRenameVariant,
   onClearVariant,
+  onOpenHistory,
   onClose,
 }: {
   exercise: Exercise;
@@ -53,6 +54,8 @@ export function ExerciseManager({
   onDelete: () => Promise<void>;
   onRenameVariant: (from: string, to: string) => Promise<void>;
   onClearVariant: (variant: string) => Promise<void>;
+  /** Apre lo storico di questo esercizio in Progressi. */
+  onOpenHistory: () => void;
   onClose: () => void;
 }) {
   const { t, language } = useTranslation();
@@ -261,7 +264,17 @@ export function ExerciseManager({
             {t(usage.count === 1 ? 'log.deleteBlockedOne' : 'log.deleteBlocked', {
               count: usage.count,
               date: formatCompactDate(language, usage.lastDate),
-            })}
+            })}{' '}
+            {/* Il rimando diventa un collegamento: la dashboard si apre gia' su
+                questo esercizio, e tornando indietro si ritrova questa
+                schermata aperta dov'era. */}
+            <button
+              type="button"
+              onClick={onOpenHistory}
+              className="font-medium text-amber-400 underline underline-offset-2"
+            >
+              {t('log.manage.openHistory')}
+            </button>
           </p>
         )}
       </div>

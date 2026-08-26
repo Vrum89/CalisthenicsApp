@@ -73,9 +73,13 @@ export function SupersetCard({
   return (
     <section className="space-y-3 rounded-2xl border border-slate-700 bg-slate-800/40 p-3">
       <header className="space-y-1">
-        {/* "Circuito: 25 Pull up + 50 Piegamenti" dice cosa si sta per fare
+        {/* "Superset: 25 Pull up + 50 Piegamenti" dice cosa si sta per fare
             meglio dei soli nomi. I totali sono quelli PREVISTI (tutte le serie,
-            spuntate o no): un titolo che cambia a ogni casella sarebbe rumore. */}
+            spuntate o no): un titolo che cambia a ogni casella sarebbe rumore.
+
+            "Superset" e non "circuito": un circuito e' un esercizio a tempo, e
+            nel catalogo ne esistono gia' col loro nome ("Circuito: 25 chin
+            up"). Chiamare cosi' anche questo confonderebbe due cose diverse. */}
         <h2 className="text-lg leading-tight font-semibold text-slate-100">
           {t('log.superset.title', {
             parts: group.entries

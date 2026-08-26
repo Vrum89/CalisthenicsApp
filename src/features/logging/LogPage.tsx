@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ChevronLeft,
   ChevronRight,
@@ -78,6 +78,16 @@ export function LogPage() {
   const draftController = useWorkoutDraft();
   const timer = useRestTimer();
 
+  const navigate = useNavigate();
+  /**
+   * L'esercizio in manutenzione sta nell'URL (`/log?manage=<id>`), non solo
+   * nello stato: dal pannello si esce verso Progressi per cancellare una
+   * sessione, e il tasto indietro deve riportare qui, aperto dov'era. Uno stato
+   * locale morirebbe alla navigazione.
+   */
+  const [searchParams, setSearchParams] = useSearchParams();
+  const managingId = searchParams.get('manage');
+
   const [focus, setFocus] = useState(0);
   // Quando e' valorizzata, l'esercizio scelto nel picker si aggancia a questa
   // voce invece di aggiungersi in fondo.
@@ -95,6 +105,12 @@ export function LogPage() {
   const variantsByExercise = knownVariants(history.data);
   const schemesByExercise = knownSchemes(history.data);
   const usageByExercise = exerciseUsage(history.data);
+  const managing = exercises.data.find((item) => item.id === managingId) ?? null;
+
+  function setManaging(exercise: Exercise | null) {
+    setSearchParams(exercise === null ? {} : { manage: exercise.id }, { replace: true });
+    if (exercise !== null) setPicking(true);
+  }
 
   // L'indice si tiene dentro i bordi qui, non a ogni rimozione: cosi' non c'e'
   // un istante in cui punta a una voce che non esiste piu'.
@@ -377,9 +393,9 @@ export function LogPage() {
                   setLinkingTo(current.id);
                   setPicking(true);
                 }}
-                className="tap-target flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 px-4 text-sm font-medium text-slate-300 hover:bg-slate-900"
+                className="tap-target flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 px-4 text-base font-medium text-slate-300 hover:bg-slate-900"
               >
-                <Link2 aria-hidden className="size-4" />
+                <Link2 aria-hidden className="size-5" />
                 {t('log.superset.link')}
               </button>
             )}
@@ -451,12 +467,14 @@ export function LogPage() {
 
       <RestTimerBar timer={timer} />
 
-      {picking && (
+      {(picking || managing !== null) && (
         <ExercisePicker
           exercises={exercises.data}
           performances={performances}
           variants={variantsByExercise}
           usage={usageByExercise}
+          managing={managing}
+          setManaging={setManaging}
           onPick={(exercise, variant) => {
             const entry = draftEntryFor(exercise, performances.get(exercise.id)?.entry ?? null);
             addToDraft(variant === undefined ? entry : { ...entry, variant });
@@ -470,9 +488,15 @@ export function LogPage() {
           onDelete={handleDeleteExercise}
           onRenameVariant={handleRenameVariant}
           onClearVariant={handleClearVariant}
+          onOpenHistory={(exercise) => {
+            // `push`, non `replace`: e' proprio il tasto indietro a dover
+            // riportare al pannello, che l'URL qui sopra tiene in vita.
+            void navigate(`/dashboard?exercise=${exercise.id}`);
+          }}
           onClose={() => {
             setPicking(false);
             setLinkingTo(null);
+            if (managingId !== null) setSearchParams({}, { replace: true });
           }}
         />
       )}
