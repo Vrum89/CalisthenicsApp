@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { LoaderCircle, Trash2, Trophy } from 'lucide-react';
+import { LoaderCircle, Trophy } from 'lucide-react';
 import { formatMetricValue } from '@/domain/metrics';
 import { isPersonalRecord, type ExerciseStats, type HistoryPoint } from '@/domain/stats';
 import type { MetricType } from '@/domain/types';
+import { SwipeToDelete } from '@/components/SwipeToDelete';
 import { formatCompactDate, formatDate } from '@/lib/dates';
 import { describeError } from '@/lib/errors';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -20,8 +21,11 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
  * renderle premibili prometterebbe un effetto che non puo' avvenire.
  *
  * Da qui si cancella anche una registrazione sbagliata: e' l'unico posto in cui
- * la si vede, quindi e' l'unico in cui ha senso poterla togliere. Con conferma,
- * perche' cancella un pezzo di storico e non c'e' modo di annullare.
+ * la si vede, quindi e' l'unico in cui ha senso poterla togliere. Il comando non
+ * sta pero' nel flusso della riga — cancellare capita una volta ogni tanto, e un
+ * cestino su ogni riga toglieva spazio e ordine allo storico, che invece si
+ * legge di continuo. Si scopre scorrendo la riga (o col mouse sopra), e chiede
+ * conferma, perche' cancella un pezzo di storico e non si annulla.
  */
 export function EntryList({
   stats,
@@ -110,29 +114,37 @@ export function EntryList({
 
         return (
           <li key={entry.id} className={entry.isExcluded ? 'opacity-50' : ''}>
-            {selectable ? (
-              <button
-                type="button"
-                aria-pressed={selected}
-                aria-label={selected ? t('dashboard.highlighted') : t('dashboard.highlight')}
-                onClick={() => {
-                  onSelect(selected ? null : entry.id);
-                }}
-                className={`w-full border-l-2 px-3 py-2.5 text-left transition-colors ${
-                  selected
-                    ? 'border-amber-400 bg-slate-800/70'
-                    : 'border-transparent hover:bg-slate-900/60'
-                }`}
-              >
-                {renderBody(point, record)}
-              </button>
-            ) : (
-              <div className="border-l-2 border-transparent px-3 py-2.5">
-                {renderBody(point, record)}
-              </div>
-            )}
+            <SwipeToDelete
+              label={t('dashboard.deleteEntry')}
+              onRequestDelete={() => {
+                setConfirming(entry.id);
+                setError(null);
+              }}
+            >
+                {selectable ? (
+                <button
+                  type="button"
+                  aria-pressed={selected}
+                  aria-label={selected ? t('dashboard.highlighted') : t('dashboard.highlight')}
+                  onClick={() => {
+                    onSelect(selected ? null : entry.id);
+                  }}
+                  className={`w-full border-l-2 py-2.5 pr-10 pl-3 text-left transition-colors ${
+                    selected
+                      ? 'border-amber-400 bg-slate-800/70'
+                      : 'border-transparent hover:bg-slate-900/60'
+                  }`}
+                >
+                  {renderBody(point, record)}
+                </button>
+              ) : (
+                <div className="border-l-2 border-transparent px-3 py-2.5">
+                  {renderBody(point, record)}
+                </div>
+              )}
+            </SwipeToDelete>
 
-            {confirming === entry.id ? (
+            {confirming === entry.id && (
               <div className="space-y-2 border-t border-slate-800 bg-slate-900/60 px-3 py-2">
                 <p className="text-xs leading-relaxed text-slate-300">
                   {t('dashboard.deleteConfirm', { date: formatDate(language, point.date) })}
@@ -167,20 +179,6 @@ export function EntryList({
                     {t('dashboard.deleteConfirmed')}
                   </button>
                 </div>
-              </div>
-            ) : (
-              <div className="flex justify-end px-1 pb-1">
-                <button
-                  type="button"
-                  aria-label={t('dashboard.deleteEntry')}
-                  onClick={() => {
-                    setConfirming(entry.id);
-                    setError(null);
-                  }}
-                  className="tap-target flex items-center justify-center rounded-lg text-slate-700 hover:text-red-400"
-                >
-                  <Trash2 aria-hidden className="size-4" />
-                </button>
               </div>
             )}
           </li>

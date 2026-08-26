@@ -1,3 +1,4 @@
+import { ChevronRight } from 'lucide-react';
 import type { DraftEntry } from '@/features/logging/draft';
 import { NumberStepper } from '@/features/logging/NumberStepper';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -29,13 +30,20 @@ export function EntryDetails({
 }) {
   const { t } = useTranslation();
 
+  // `group` + `group-open:` sul chevron: un triangolino che ruota e un contorno
+  // di riga sono cio' che rende evidente che si apre. Senza, il sommario
+  // sembrava un'etichetta e non un comando — infatti non veniva toccato.
   return (
-    <details>
-      <summary className="tap-target flex cursor-pointer list-none items-center text-xs tracking-wider text-slate-500 uppercase">
+    <details className="group rounded-xl border border-slate-700/60 bg-slate-900/40">
+      <summary className="tap-target flex cursor-pointer list-none items-center gap-1.5 rounded-xl px-2 text-xs tracking-wider text-slate-400 uppercase hover:text-slate-200">
+        <ChevronRight
+          aria-hidden
+          className="size-4 shrink-0 transition-transform group-open:rotate-90"
+        />
         {summary ?? t('log.details')}
       </summary>
 
-      <div className="space-y-3 pt-2">
+      <div className="space-y-3 p-2 pt-1">
         <div className="space-y-1">
           <span className="block text-xs text-slate-500">{t('log.addedWeight')}</span>
           <NumberStepper

@@ -208,6 +208,41 @@ export function alignRounds(entries: readonly DraftEntry[]): DraftEntry[] {
   });
 }
 
+/**
+ * Il totale previsto di una voce: la somma di TUTTE le serie, fatte o no.
+ *
+ * Diverso da `entryValue`, che conta solo quelle spuntate perche' e' il dato che
+ * finisce nel database. Questo serve al titolo del circuito, che deve dire cosa
+ * si sta per fare e non cambiare a ogni casella spuntata.
+ */
+export function plannedTotal(entry: DraftEntry): number {
+  return entry.sets.reduce((total, set) => total + set.reps, 0);
+}
+
+/** Aggiunge un round a tutti gli esercizi del gruppo, ricalcando l'ultimo. */
+export function addRound(entries: readonly DraftEntry[]): DraftEntry[] {
+  return entries.map((entry) => {
+    const last = entry.sets.at(-1);
+    return {
+      ...entry,
+      sets: [...entry.sets, { reps: last?.reps ?? DEFAULT_OPEN_REPS, done: false }],
+    };
+  });
+}
+
+/**
+ * Toglie l'ultimo round a tutti gli esercizi del gruppo.
+ *
+ * Serve dopo un aggancio: allineare al massimo e' la scelta prudente, ma se gli
+ * esercizi avevano cinque e otto serie i tre round in piu' vanno tolti a mano —
+ * ed e' comunque piu' facile togliere che riscrivere uno scheme.
+ */
+export function removeRound(entries: readonly DraftEntry[]): DraftEntry[] {
+  return entries.map((entry) =>
+    entry.sets.length <= 1 ? entry : { ...entry, sets: entry.sets.slice(0, -1) },
+  );
+}
+
 export function newSupersetKey(): string {
   return crypto.randomUUID();
 }

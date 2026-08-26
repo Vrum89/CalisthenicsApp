@@ -6,6 +6,7 @@ import {
   currentRound,
   doneReps,
   entryValue,
+  plannedTotal,
   roundComplete,
   roundCount,
   setReps,
@@ -33,6 +34,7 @@ export function SupersetCard({
   group,
   variants,
   onChangeEntry,
+  onChangeRounds,
   onUnlink,
   onRoundComplete,
 }: {
@@ -40,6 +42,8 @@ export function SupersetCard({
   /** Condizioni gia' usate, per esercizio. */
   variants: ReadonlyMap<string, readonly string[]>;
   onChangeEntry: (entryId: string, change: (entry: DraftEntry) => DraftEntry) => void;
+  /** Aggiunge o toglie un round a tutti gli esercizi del gruppo insieme. */
+  onChangeRounds: (delta: 1 | -1) => void;
   onUnlink: (entryId: string) => void;
   /** Chiamata quando l'ultimo esercizio del round e' concluso: fa partire il riposo. */
   onRoundComplete: () => void;
@@ -69,8 +73,15 @@ export function SupersetCard({
   return (
     <section className="space-y-3 rounded-2xl border border-slate-700 bg-slate-800/40 p-3">
       <header className="space-y-1">
-        <h2 className="truncate text-lg leading-tight font-semibold text-slate-100">
-          {group.entries.map((entry) => entry.name).join(' + ')}
+        {/* "Circuito: 25 Pull up + 50 Piegamenti" dice cosa si sta per fare
+            meglio dei soli nomi. I totali sono quelli PREVISTI (tutte le serie,
+            spuntate o no): un titolo che cambia a ogni casella sarebbe rumore. */}
+        <h2 className="text-lg leading-tight font-semibold text-slate-100">
+          {t('log.superset.title', {
+            parts: group.entries
+              .map((entry) => `${String(plannedTotal(entry))} ${entry.name}`)
+              .join(' + '),
+          })}
         </h2>
         <p className="text-xs text-slate-500">
           {t('log.superset.rounds', { done: doneRounds(group), total: rounds })}
@@ -102,6 +113,34 @@ export function SupersetCard({
           className="tap-target flex items-center justify-center rounded-xl border border-slate-700 px-3 text-slate-300 disabled:opacity-30"
         >
           <ChevronRight aria-hidden className="size-5" />
+        </button>
+      </div>
+
+      {/* Togliere un round serve dopo un aggancio: allineare al massimo e' la
+          scelta prudente, ma i giri di troppo vanno via da qualche parte. */}
+      <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+        <button
+          type="button"
+          onClick={() => {
+            onChangeRounds(-1);
+            setBrowsing(null);
+          }}
+          disabled={rounds <= 1}
+          className="tap-target flex items-center gap-1 rounded-lg px-2 text-slate-400 hover:text-slate-200 disabled:opacity-30"
+        >
+          <Minus aria-hidden className="size-4" />
+          {t('log.superset.removeRound')}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            onChangeRounds(1);
+            setBrowsing(null);
+          }}
+          className="tap-target flex items-center gap-1 rounded-lg px-2 text-slate-400 hover:text-slate-200"
+        >
+          <Plus aria-hidden className="size-4" />
+          {t('log.superset.addRound')}
         </button>
       </div>
 
@@ -212,7 +251,7 @@ export function SupersetCard({
 
       {/* Zavorra, condizione e note restano raggiungibili anche da agganciati:
           un esercizio dentro un superset e' un esercizio come gli altri. */}
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         {group.entries.map((entry) => (
           <EntryDetails
             key={entry.id}
