@@ -46,6 +46,7 @@ export const it = {
   'config.production': 'In produzione le stesse variabili vanno impostate su Vercel.',
 
   'home.session': 'Sessione attiva',
+  'home.version': 'versione {version} · {date}',
   'home.catalog': 'Catalogo esercizi',
   'home.catalogLoading': 'Carico il catalogo…',
   'home.catalogEmpty':
@@ -81,6 +82,7 @@ export const it = {
   'dashboard.deleteConfirm': 'Cancellare la registrazione del {date}? Non si può annullare.',
   'dashboard.deleteCancel': 'No, lasciala',
   'dashboard.deleteConfirmed': 'Sì, cancella',
+  'dashboard.supersetWith': 'in superset con {names}',
   'dashboard.excluded': 'Esclusa dai calcoli',
   'dashboard.originalDate': 'data originale {date}',
   'dashboard.loading': 'Carico lo storico…',
@@ -150,6 +152,7 @@ export const it = {
   'log.manage.merge': 'Unisci a «{name}»',
   'log.manage.mergeHint': 'Esiste già «{name}». Unendoli, le {count} registrazioni di questo passano lì e questa voce sparisce: lo storico torna uno solo.',
   'log.manage.mergeBlocked': '«{name}» esiste già ma si misura in {metric}: numeri diversi finirebbero sulla stessa linea. Scegli un altro nome.',
+  'log.manage.openHistory': 'Apri lo storico →',
   'log.manage.applyVariant': 'Applica il nuovo nome',
   'log.manage.clearVariant': 'Togli «{name}» dalle registrazioni',
   'log.manage.variantHint': 'Rinominare una condizione la riscrive in tutte le registrazioni di questo esercizio. Usare un nome che esiste già le unisce.',
@@ -167,7 +170,7 @@ export const it = {
   'log.create.windowHint': 'Il tempo entro cui si contano le ripetizioni.',
   'log.create.cancel': 'Annulla',
   'log.create.submit': 'Crea e aggiungi',
-  'log.superset.title': 'Circuito: {parts}',
+  'log.superset.title': 'Superset: {parts}',
   'log.superset.addRound': 'Round in più',
   'log.superset.removeRound': 'Un round in meno',
   'log.superset.round': 'Round {index} di {total}',

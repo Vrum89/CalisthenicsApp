@@ -25,6 +25,8 @@ export function ExercisePicker({
   performances,
   variants,
   usage,
+  managing,
+  setManaging,
   onPick,
   onCreate,
   onRename,
@@ -32,6 +34,7 @@ export function ExercisePicker({
   onDelete,
   onRenameVariant,
   onClearVariant,
+  onOpenHistory,
   onClose,
 }: {
   exercises: readonly Exercise[];
@@ -40,6 +43,13 @@ export function ExercisePicker({
   variants: ReadonlyMap<string, readonly string[]>;
   /** Quante volte ogni esercizio compare nello storico. Assente = mai usato. */
   usage: ReadonlyMap<string, ExerciseUsage>;
+  /**
+   * L'esercizio in manutenzione, tenuto fuori dal componente perche' finisce
+   * nell'URL: uscendo verso i Progressi e tornando indietro questa schermata
+   * deve ritrovarsi aperta dov'era.
+   */
+  managing: Exercise | null;
+  setManaging: (exercise: Exercise | null) => void;
   onPick: (exercise: Exercise, variant?: string) => void;
   onCreate: (draft: NewExerciseDraft) => Promise<void>;
   onRename: (exercise: Exercise, name: string) => Promise<void>;
@@ -47,6 +57,7 @@ export function ExercisePicker({
   onDelete: (exercise: Exercise) => Promise<void>;
   onRenameVariant: (exercise: Exercise, from: string, to: string) => Promise<void>;
   onClearVariant: (exercise: Exercise, variant: string) => Promise<void>;
+  onOpenHistory: (exercise: Exercise) => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -55,7 +66,7 @@ export function ExercisePicker({
   const [creating, setCreating] = useState<(Partial<NewExerciseDraft> & { name: string }) | null>(
     null,
   );
-  const [managing, setManaging] = useState<Exercise | null>(null);
+
 
   const needle = query.trim().toLowerCase();
   /**
@@ -123,6 +134,9 @@ export function ExercisePicker({
             }}
             onRenameVariant={(from, to) => onRenameVariant(managing, from, to)}
             onClearVariant={(variant) => onClearVariant(managing, variant)}
+            onOpenHistory={() => {
+              onOpenHistory(managing);
+            }}
             onClose={() => {
               setManaging(null);
             }}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LoaderCircle, Trophy } from 'lucide-react';
+import { Link2, LoaderCircle, Trophy } from 'lucide-react';
 import { formatMetricValue } from '@/domain/metrics';
 import { isPersonalRecord, type ExerciseStats, type HistoryPoint } from '@/domain/stats';
 import type { MetricType } from '@/domain/types';
@@ -91,6 +91,16 @@ export function EntryList({
             <span>{t('dashboard.originalDate', { date: point.originalDate })}</span>
           )}
         </div>
+
+        {/* Il superset non e' un dato confrontabile — i calcoli restano per
+            esercizio — ma e' il contesto che spiega il numero: 25 trazioni
+            alternate ai piegamenti non sono 25 trazioni fresche. */}
+        {point.supersetWith.length > 0 && (
+          <p className="mt-0.5 flex items-center gap-1 text-xs text-amber-400/80">
+            <Link2 aria-hidden className="size-3 shrink-0" />
+            {t('dashboard.supersetWith', { names: point.supersetWith.join(' + ') })}
+          </p>
+        )}
 
         {entry.variant && <p className="mt-0.5 text-xs text-slate-400">{entry.variant}</p>}
         {entry.notes && <p className="mt-0.5 text-xs text-slate-500">{entry.notes}</p>}

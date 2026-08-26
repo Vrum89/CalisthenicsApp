@@ -1,11 +1,29 @@
 import { fileURLToPath, URL } from 'node:url';
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vite.dev/config/
+/**
+ * Versione e data di build, iniettate a compilazione.
+ *
+ * In una PWA il service worker puo' servire una copia vecchia dell'app: senza
+ * un modo di leggere quale versione si ha in mano, "l'ho aggiornata?" non ha
+ * risposta. La data di build serve piu' del numero — dice se cio' che gira e'
+ * quello appena pubblicato.
+ */
+const pkg: { version: string } = JSON.parse(readFileSync('./package.json', 'utf8')) as {
+  version: string;
+};
+const buildTime = new Date().toISOString();
+
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __BUILD_TIME__: JSON.stringify(buildTime),
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

@@ -14,6 +14,15 @@ export interface HistoryPoint {
   readonly date: string;
   readonly originalDate: string | null;
   readonly entry: WorkoutExercise;
+  /**
+   * Gli altri esercizi eseguiti insieme a questo nello stesso superset, in
+   * ordine di esecuzione (spec §5.6). Vuoto se la voce non era in un superset.
+   *
+   * E' contesto, non un dato confrontabile: dice PERCHE' quel giorno le
+   * ripetizioni sono quelle — 25 trazioni alternate ai piegamenti non sono 25
+   * trazioni fresche — senza entrare nei calcoli, che restano per esercizio.
+   */
+  readonly supersetWith: readonly string[];
 }
 
 export interface ExerciseStats {
@@ -48,14 +57,36 @@ export function buildHistory(
   entries: readonly WorkoutExercise[],
   workoutsById: ReadonlyMap<string, Workout>,
   exerciseId: string,
+  /** Nomi del catalogo: servono a dire con CHI era in superset, non con quale id. */
+  exerciseNames: ReadonlyMap<string, string> = new Map(),
 ): HistoryPoint[] {
+  /** Compagni di superset di una voce, per chiave e in ordine di esecuzione. */
+  const companions = (entry: WorkoutExercise): string[] => {
+    if (entry.supersetKey === null) return [];
+    return entries
+      .filter(
+        (other) =>
+          other.supersetKey === entry.supersetKey &&
+          other.workoutId === entry.workoutId &&
+          other.id !== entry.id,
+      )
+      .sort((a, b) => (a.supersetOrder ?? 0) - (b.supersetOrder ?? 0))
+      .map((other) => exerciseNames.get(other.exerciseId) ?? '')
+      .filter((name) => name !== '');
+  };
+
   return entries
     .filter((entry) => entry.exerciseId === exerciseId)
     .flatMap((entry) => {
       const workout = workoutsById.get(entry.workoutId);
       if (!workout) return [];
       return [
-        { date: workout.workoutDate, originalDate: workout.originalDate, entry },
+        {
+          date: workout.workoutDate,
+          originalDate: workout.originalDate,
+          entry,
+          supersetWith: companions(entry),
+        },
       ] satisfies HistoryPoint[];
     })
     .sort((a, b) => a.date.localeCompare(b.date));

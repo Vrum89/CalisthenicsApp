@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, LoaderCircle, TriangleAlert } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -23,6 +23,17 @@ export function DashboardPage() {
   const exercisesQuery = useExercises();
   const historyQuery = useWorkoutHistory();
 
+  /**
+   * `?exercise=<id>` apre la dashboard gia' su quell'esercizio.
+   *
+   * Serve ai link che arrivano da altrove — per esempio "queste registrazioni,
+   * che trovi in Progressi" nella gestione del catalogo: mandare l'utente a una
+   * schermata dove deve ricercare a mano cio' che gli hai appena nominato non e'
+   * un collegamento, e' un rimando.
+   */
+  const [searchParams] = useSearchParams();
+  const requestedExerciseId = searchParams.get('exercise');
+
   const [pickedCategory, setPickedCategory] = useState<string | null>(null);
   const [pickedExerciseId, setPickedExerciseId] = useState<string | null>(null);
   const [pickedEntryId, setPickedEntryId] = useState<string | null>(null);
@@ -38,16 +49,27 @@ export function DashboardPage() {
   // Selezione derivata invece che sincronizzata: se la categoria cambia e
   // l'esercizio scelto non le appartiene piu', si ricade sul primo. Nessun
   // effect da tenere allineato.
-  const category = pickedCategory ?? categories[0] ?? null;
+  // L'esercizio chiesto dall'URL vale finche' non se ne sceglie un altro a mano:
+  // decide anche la categoria, altrimenti resterebbe fuori dalla scheda aperta.
+  const requested =
+    pickedExerciseId === null && requestedExerciseId !== null
+      ? (exercises.find((item) => item.id === requestedExerciseId) ?? null)
+      : null;
+
+  const category = pickedCategory ?? requested?.category ?? categories[0] ?? null;
   const inCategory = exercises.filter((exercise) => exercise.category === category);
-  const exercise = inCategory.find((item) => item.id === pickedExerciseId) ?? inCategory[0] ?? null;
+  const exercise =
+    inCategory.find((item) => item.id === (pickedExerciseId ?? requested?.id)) ??
+    inCategory[0] ??
+    null;
 
   // Niente useMemo: lo storico e' di poche centinaia di righe e il React
   // Compiler memoizza da se'. Scriverlo a mano qui faceva solo litigare il
   // compilatore con dipendenze che non riusciva a dimostrare stabili.
   const workoutsById = new Map(historyQuery.data.workouts.map((workout) => [workout.id, workout]));
+  const exerciseNames = new Map(exercises.map((item) => [item.id, item.name]));
   const allPoints = exercise
-    ? buildHistory(historyQuery.data.entries, workoutsById, exercise.id)
+    ? buildHistory(historyQuery.data.entries, workoutsById, exercise.id, exerciseNames)
     : [];
 
   // Le condizioni si calcolano su TUTTE le voci, non su quelle filtrate: e' cio'
