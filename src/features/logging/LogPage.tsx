@@ -25,11 +25,13 @@ import { clearVariant, renameVariant } from '@/features/exercises/variantsReposi
 import { useExercises } from '@/features/exercises/useExercises';
 import { useWorkoutHistory } from '@/features/history/useWorkoutHistory';
 import {
+  addRound,
   alignRounds,
   draftEntryFor,
   filledEntries,
   groupEntries,
   newSupersetKey,
+  removeRound,
   type DraftEntry,
 } from '@/features/logging/draft';
 import { ExerciseCard } from '@/features/logging/ExerciseCard';
@@ -300,6 +302,14 @@ export function LogPage() {
                   draftController.updateEntry(entryId, change);
                   setSaved(false);
                 }}
+                onChangeRounds={(delta) => {
+                  const members = currentGroup.entries;
+                  const changed = delta === 1 ? addRound(members) : removeRound(members);
+                  for (const member of changed) {
+                    draftController.updateEntry(member.id, () => member);
+                  }
+                  setSaved(false);
+                }}
                 onUnlink={handleUnlink}
                 onRoundComplete={() => {
                   timer.start(REST_MODE);
@@ -326,23 +336,6 @@ export function LogPage() {
                   timer.start(windowMode(seconds));
                 }}
               />
-            )}
-
-            {/* L'aggancio parte da un esercizio gia' in lista: "questo, insieme
-                a…". E' l'unico modo in cui un superset nasce davvero — non
-                esiste un superset vuoto da riempire. */}
-            {current.metricType === 'sets' && (
-              <button
-                type="button"
-                onClick={() => {
-                  setLinkingTo(current.id);
-                  setPicking(true);
-                }}
-                className="tap-target flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 px-4 text-sm font-medium text-slate-300 hover:bg-slate-900"
-              >
-                <Link2 aria-hidden className="size-4" />
-                {t('log.superset.link')}
-              </button>
             )}
 
             {groups.length > 1 && (
@@ -374,8 +367,26 @@ export function LogPage() {
                 </button>
               </div>
             )}
+            {/* L'aggancio parte da un esercizio gia' in lista: "questo, insieme
+                a…". E' l'unico modo in cui un superset nasce davvero — non
+                esiste un superset vuoto da riempire. */}
+            {current.metricType === 'sets' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLinkingTo(current.id);
+                  setPicking(true);
+                }}
+                className="tap-target flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 px-4 text-sm font-medium text-slate-300 hover:bg-slate-900"
+              >
+                <Link2 aria-hidden className="size-4" />
+                {t('log.superset.link')}
+              </button>
+            )}
+
           </>
         )}
+
 
         <button
           type="button"

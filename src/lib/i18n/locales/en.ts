@@ -12,6 +12,7 @@ export const en: Record<TranslationKey, string> = {
   'common.retry': 'Retry',
   'common.signOut': 'Sign out',
   'common.signingOut': 'Signing out…',
+  'common.delete': 'Delete',
   'common.loading': 'Loading…',
 
   'login.subtitle': 'Sign in with your email: you get a link, no password to remember.',
@@ -161,6 +162,9 @@ export const en: Record<TranslationKey, string> = {
   'log.create.windowHint': 'The time you count the reps within.',
   'log.create.cancel': 'Cancel',
   'log.create.submit': 'Create and add',
+  'log.superset.title': 'Circuit: {parts}',
+  'log.superset.addRound': 'One more round',
+  'log.superset.removeRound': 'One less round',
   'log.superset.round': 'Round {index} of {total}',
   'log.superset.rounds': '{done} of {total} rounds',
   'log.superset.previousRound': 'Previous round',

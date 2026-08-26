@@ -16,6 +16,7 @@ export const it = {
   'common.retry': 'Riprova',
   'common.signOut': 'Esci',
   'common.signingOut': 'Esco…',
+  'common.delete': 'Elimina',
   'common.loading': 'Caricamento…',
 
   'login.subtitle': 'Accedi con la tua email: ti arriva un link, nessuna password.',
@@ -166,6 +167,9 @@ export const it = {
   'log.create.windowHint': 'Il tempo entro cui si contano le ripetizioni.',
   'log.create.cancel': 'Annulla',
   'log.create.submit': 'Crea e aggiungi',
+  'log.superset.title': 'Circuito: {parts}',
+  'log.superset.addRound': 'Round in più',
+  'log.superset.removeRound': 'Un round in meno',
   'log.superset.round': 'Round {index} di {total}',
   'log.superset.rounds': '{done} round su {total}',
   'log.superset.previousRound': 'Round precedente',
