@@ -19,7 +19,7 @@ import type { MetricType } from '@/domain/types';
 /** L'ordine di questo array è l'ordine in cui le categorie appaiono nell'app. */
 export const EXERCISE_CATEGORIES = [
   'strength_sets',
-  'max_reps_10min',
+  'max_reps_window',
   'time_circuits',
   'max_effort',
   'running',
@@ -28,9 +28,13 @@ export const EXERCISE_CATEGORIES = [
 
 export type ExerciseCategory = (typeof EXERCISE_CATEGORIES)[number];
 
-const CATEGORY_LABEL_KEYS: Record<ExerciseCategory, TranslationKey> = {
+const CATEGORY_LABEL_KEYS: Record<ExerciseCategory | 'max_reps_10min', TranslationKey> = {
   strength_sets: 'category.strength_sets',
-  max_reps_10min: 'category.max_reps_10min',
+  max_reps_window: 'category.max_reps_window',
+  // Chiave storica: la finestra non e' sempre di dieci minuti, e il nome lo
+  // diceva. Resta qui tradotta perche' finche' la migrazione non e' applicata
+  // le righe vecchie devono comunque leggersi.
+  max_reps_10min: 'category.max_reps_window',
   time_circuits: 'category.time_circuits',
   max_effort: 'category.max_effort',
   running: 'category.running',
@@ -45,8 +49,9 @@ const CATEGORY_LABEL_KEYS: Record<ExerciseCategory, TranslationKey> = {
  * restano indipendenti (un massimale a tempo e' legittimo). Serve a non far
  * scegliere due volte la stessa cosa a chi sta creando un esercizio in palestra.
  */
-const DEFAULT_METRIC: Record<ExerciseCategory, MetricType> = {
+const DEFAULT_METRIC: Record<ExerciseCategory | 'max_reps_10min', MetricType> = {
   strength_sets: 'sets',
+  max_reps_window: 'reps',
   max_reps_10min: 'reps',
   time_circuits: 'time',
   max_effort: 'reps',
@@ -59,7 +64,7 @@ export function defaultMetricFor(category: string): MetricType {
 }
 
 export function isKnownCategory(value: string): value is ExerciseCategory {
-  return EXERCISE_CATEGORIES.some((category) => category === value);
+  return value in CATEGORY_LABEL_KEYS;
 }
 
 /** Chiave nota → etichetta tradotta; qualsiasi altra cosa → il valore grezzo. */

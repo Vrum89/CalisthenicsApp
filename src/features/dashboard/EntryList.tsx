@@ -1,8 +1,10 @@
-import { Trophy } from 'lucide-react';
+import { useState } from 'react';
+import { LoaderCircle, Trash2, Trophy } from 'lucide-react';
 import { formatMetricValue } from '@/domain/metrics';
 import { isPersonalRecord, type ExerciseStats, type HistoryPoint } from '@/domain/stats';
 import type { MetricType } from '@/domain/types';
-import { formatCompactDate } from '@/lib/dates';
+import { formatCompactDate, formatDate } from '@/lib/dates';
+import { describeError } from '@/lib/errors';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
 /**
@@ -16,21 +18,43 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
  * Toccare una voce la evidenzia sul grafico. Sono cliccabili solo le voci che
  * sul grafico ci sono davvero — quelle senza valore o escluse non lo sono, e
  * renderle premibili prometterebbe un effetto che non puo' avvenire.
+ *
+ * Da qui si cancella anche una registrazione sbagliata: e' l'unico posto in cui
+ * la si vede, quindi e' l'unico in cui ha senso poterla togliere. Con conferma,
+ * perche' cancella un pezzo di storico e non c'e' modo di annullare.
  */
 export function EntryList({
   stats,
   metricType,
   selectedEntryId,
   onSelect,
+  onDelete,
 }: {
   stats: ExerciseStats;
   metricType: MetricType;
   selectedEntryId: string | null;
   onSelect: (entryId: string | null) => void;
+  onDelete: (point: HistoryPoint) => Promise<void>;
 }) {
   const { t, language } = useTranslation();
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const reversed = [...stats.points].reverse();
   const chartable = new Set(stats.comparable.map((point) => point.entry.id));
+
+  async function handleDelete(point: HistoryPoint) {
+    setError(null);
+    setDeleting(point.entry.id);
+    try {
+      await onDelete(point);
+      setConfirming(null);
+    } catch (cause) {
+      setError(cause);
+    } finally {
+      setDeleting(null);
+    }
+  }
 
   function renderBody(point: HistoryPoint, record: boolean) {
     const { entry } = point;
@@ -105,6 +129,58 @@ export function EntryList({
             ) : (
               <div className="border-l-2 border-transparent px-3 py-2.5">
                 {renderBody(point, record)}
+              </div>
+            )}
+
+            {confirming === entry.id ? (
+              <div className="space-y-2 border-t border-slate-800 bg-slate-900/60 px-3 py-2">
+                <p className="text-xs leading-relaxed text-slate-300">
+                  {t('dashboard.deleteConfirm', { date: formatDate(language, point.date) })}
+                </p>
+                {error !== null && (
+                  <p role="alert" className="text-xs leading-relaxed text-red-400">
+                    {describeError(error, t)}
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConfirming(null);
+                      setError(null);
+                    }}
+                    className="tap-target flex-1 rounded-lg border border-slate-700 px-3 text-sm text-slate-300"
+                  >
+                    {t('dashboard.deleteCancel')}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={deleting === entry.id}
+                    onClick={() => {
+                      void handleDelete(point);
+                    }}
+                    className="tap-target flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-600 px-3 text-sm font-semibold text-slate-50 disabled:opacity-50"
+                  >
+                    {deleting === entry.id && (
+                      <LoaderCircle aria-hidden className="size-4 animate-spin" />
+                    )}
+                    {t('dashboard.deleteConfirmed')}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-end px-1 pb-1">
+                <button
+                  type="button"
+                  aria-label={t('dashboard.deleteEntry')}
+                  onClick={() => {
+                    setConfirming(entry.id);
+                    setError(null);
+                  }}
+                  className="tap-target flex items-center justify-center rounded-lg text-slate-700 hover:text-red-400"
+                >
+                  <Trash2 aria-hidden className="size-4" />
+                </button>
               </div>
             )}
           </li>

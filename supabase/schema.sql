@@ -38,6 +38,11 @@ create table if not exists exercises (
 alter table exercises add column if not exists window_seconds int
   check (window_seconds is null or window_seconds between 10 and 7200);
 
+-- La categoria "max ripetizioni in 10 minuti" portava la durata nel nome, ma la
+-- finestra ora e' per-esercizio e puo' essere di 8 minuti come di 15. La chiave
+-- diventa generica; l'etichetta la traduce l'app (src/domain/categories.ts).
+update exercises set category = 'max_reps_window' where category = 'max_reps_10min';
+
 -- PROGRAMS (schede)
 create table if not exists programs (
   id          uuid primary key default gen_random_uuid(),
@@ -224,12 +229,12 @@ begin
     (target_user, 'Chin up EMOM',                'strength_sets',  'minutes'),
 
     -- Max ripetizioni in 10 minuti (metrica 'reps': un numero solo)
-    (target_user, 'Pull up (10 min)',            'max_reps_10min', 'reps'),
-    (target_user, 'Chin up (10 min)',            'max_reps_10min', 'reps'),
-    (target_user, 'Dip (10 min)',                'max_reps_10min', 'reps'),
-    (target_user, 'Dip anelli (10 min)',         'max_reps_10min', 'reps'),
-    (target_user, 'Hand stand push up (10 min)', 'max_reps_10min', 'reps'),
-    (target_user, 'V push up (10 min)',          'max_reps_10min', 'reps'),
+    (target_user, 'Pull up (10 min)',            'max_reps_window', 'reps'),
+    (target_user, 'Chin up (10 min)',            'max_reps_window', 'reps'),
+    (target_user, 'Dip (10 min)',                'max_reps_window', 'reps'),
+    (target_user, 'Dip anelli (10 min)',         'max_reps_window', 'reps'),
+    (target_user, 'Hand stand push up (10 min)', 'max_reps_window', 'reps'),
+    (target_user, 'V push up (10 min)',          'max_reps_window', 'reps'),
 
     -- Massimali (metrica 'reps': ripetizioni del massimale)
     (target_user, 'Massimale: Pull up',          'max_effort',     'reps'),
@@ -282,10 +287,72 @@ update exercises as e
 set category = mapping.key
 from (values
   ('Forza (serie × rip)',      'strength_sets'),
-  ('Max ripetizioni (10 min)', 'max_reps_10min'),
+  ('Max ripetizioni (10 min)', 'max_reps_window'),
   ('Circuiti a tempo',         'time_circuits'),
   ('Massimali',                'max_effort'),
   ('Corsa',                    'running'),
   ('Altro',                    'other')
 ) as mapping(label, key)
 where e.category = mapping.label;
+
+-- -----------------------------------------------------------------------------
+-- 5b. FUSIONE DI DUE ESERCIZI
+--
+-- Un refuso battuto una volta ("Dipp" invece di "Dip") crea una voce di
+-- catalogo separata, e da quel momento lo storico e' spezzato in due grafici che
+-- non si parlano. Rinominare la voce sbagliata col nome giusto vuol dire fondere
+-- le due. Sta in una funzione perche' spostare le righe e cancellare l'esercizio
+-- devono riuscire o fallire insieme.
+-- -----------------------------------------------------------------------------
+
+create or replace function public.merge_exercises(source uuid, target uuid)
+returns integer
+language plpgsql
+-- `security invoker` (il default, esplicitato qui per chiarezza): la funzione
+-- gira con i permessi di chi la chiama, quindi la RLS resta in vigore su ogni
+-- riga toccata. Con `security definer` avrebbe scavalcato l'isolamento fra
+-- utenti che e' il fondamento di tutto lo schema.
+security invoker
+set search_path = public
+as $$
+declare
+  moved integer;
+  source_metric text;
+  target_metric text;
+begin
+  if source = target then
+    raise exception 'merge_exercises: origine e destinazione coincidono';
+  end if;
+
+  -- La RLS gia' impedisce di vedere gli esercizi altrui, ma un `update` che
+  -- punta le proprie righe a un id qualunque passerebbe: le policy di
+  -- `workout_exercises` guardano `user_id`, non `exercise_id`. Il controllo
+  -- esplicito evita di corrompere il proprio storico con un id inventato.
+  select metric_type into source_metric
+    from exercises where id = source and user_id = auth.uid();
+  select metric_type into target_metric
+    from exercises where id = target and user_id = auth.uid();
+
+  if source_metric is null or target_metric is null then
+    raise exception 'merge_exercises: esercizio inesistente o non tuo';
+  end if;
+
+  -- Metriche diverse significano numeri che vogliono dire cose diverse: 30
+  -- ripetizioni totali e 30 secondi finirebbero sulla stessa linea.
+  if source_metric <> target_metric then
+    raise exception 'merge_exercises: metriche diverse (% e %)', source_metric, target_metric;
+  end if;
+
+  update workout_exercises set exercise_id = target where exercise_id = source;
+  get diagnostics moved = row_count;
+
+  update program_exercises set exercise_id = target where exercise_id = source;
+
+  delete from exercises where id = source;
+
+  return moved;
+end;
+$$;
+
+grant execute on function public.merge_exercises(uuid, uuid) to authenticated;
+

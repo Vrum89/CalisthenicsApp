@@ -50,7 +50,11 @@ export function SetCheckboxes({
   function complete(index: number) {
     onChange((current) => toggleSet(current, index));
     onSetCompleted();
-    setEditing(null);
+    // Conclusa una serie dal correttore, si apre quella dopo: sul cover display
+    // ogni tocco risparmiato conta, e la serie successiva e' sempre il passo
+    // seguente. Se non ce n'e' un'altra da fare si chiude e basta.
+    const next = entry.sets.findIndex((set, position) => position > index && !set.done);
+    setEditing(next === -1 ? null : next);
   }
 
   function handleTap(index: number, done: boolean) {

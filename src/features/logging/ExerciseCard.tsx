@@ -8,6 +8,7 @@ import {
 } from '@/domain/metrics';
 import type { DraftEntry } from '@/features/logging/draft';
 import { describePerformance, type LastPerformance } from '@/features/logging/lastPerformance';
+import { EntryDetails } from '@/features/logging/EntryDetails';
 import { NumberStepper } from '@/features/logging/NumberStepper';
 import { SetCheckboxes } from '@/features/logging/SetCheckboxes';
 import { Stopwatch } from '@/features/logging/Stopwatch';
@@ -180,73 +181,7 @@ export function ExerciseCard({
           />
         </div>
       ) : (
-        <details>
-          <summary className="tap-target flex cursor-pointer list-none items-center text-xs tracking-wider text-slate-500 uppercase">
-            {t('log.details')}
-          </summary>
-
-          <div className="space-y-3 pt-2">
-            <div className="space-y-1">
-              <span className="block text-xs text-slate-500">{t('log.addedWeight')}</span>
-              <NumberStepper
-                value={entry.addedWeightKg}
-                label={t('log.addedWeight')}
-                unit="kg"
-                step={2.5}
-                max={200}
-                placeholder="0"
-                onChange={(addedWeightKg) => {
-                  onChange((current) => ({ ...current, addedWeightKg }));
-                }}
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label htmlFor={`variant-${entry.id}`} className="block text-xs text-slate-500">
-                {t('log.variant')}
-              </label>
-              <input
-                id={`variant-${entry.id}`}
-                type="text"
-                autoComplete="off"
-                list={variants.length > 0 ? `variants-${entry.id}` : undefined}
-                value={entry.variant}
-                placeholder={t('log.variantPlaceholder')}
-                onChange={(event) => {
-                  const variant = event.target.value;
-                  onChange((current) => ({ ...current, variant }));
-                }}
-                className="tap-target w-full rounded-xl border border-slate-700 bg-slate-900 px-3 text-base text-slate-100 placeholder:text-slate-600"
-              />
-              {/* Un `datalist` suggerisce senza costringere: le condizioni gia'
-                  usate si scelgono da un tocco, ma il campo resta libero. */}
-              {variants.length > 0 && (
-                <datalist id={`variants-${entry.id}`}>
-                  {variants.map((variant) => (
-                    <option key={variant} value={variant} />
-                  ))}
-                </datalist>
-              )}
-            </div>
-
-            <div className="space-y-1">
-              <label htmlFor={`notes-${entry.id}`} className="block text-xs text-slate-500">
-                {t('log.notes')}
-              </label>
-              <textarea
-                id={`notes-${entry.id}`}
-                rows={2}
-                value={entry.notes}
-                placeholder={t('log.notesPlaceholder')}
-                onChange={(event) => {
-                  const notes = event.target.value;
-                  onChange((current) => ({ ...current, notes }));
-                }}
-                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-base text-slate-100 placeholder:text-slate-600"
-              />
-            </div>
-          </div>
-        </details>
+        <EntryDetails entry={entry} variants={variants} onChange={onChange} />
       )}
     </section>
   );

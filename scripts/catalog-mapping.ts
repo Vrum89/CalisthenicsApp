@@ -28,11 +28,11 @@ export const CATALOG: readonly CatalogEntry[] = [
   { name: 'Piegamenti', category: 'strength_sets', metricType: 'sets' },
   { name: 'Chin up EMOM', category: 'strength_sets', metricType: 'minutes' },
 
-  { name: 'Pull up (10 min)', category: 'max_reps_10min', metricType: 'reps' },
-  { name: 'Dip (10 min)', category: 'max_reps_10min', metricType: 'reps' },
-  { name: 'Dip anelli (10 min)', category: 'max_reps_10min', metricType: 'reps' },
-  { name: 'Hand stand push up (10 min)', category: 'max_reps_10min', metricType: 'reps' },
-  { name: 'V push up (10 min)', category: 'max_reps_10min', metricType: 'reps' },
+  { name: 'Pull up (10 min)', category: 'max_reps_window', metricType: 'reps' },
+  { name: 'Dip (10 min)', category: 'max_reps_window', metricType: 'reps' },
+  { name: 'Dip anelli (10 min)', category: 'max_reps_window', metricType: 'reps' },
+  { name: 'Hand stand push up (10 min)', category: 'max_reps_window', metricType: 'reps' },
+  { name: 'V push up (10 min)', category: 'max_reps_window', metricType: 'reps' },
 
   { name: 'Circuito: 25 chin up', category: 'time_circuits', metricType: 'time' },
   { name: 'Circuito: 25 chin up + 50 push up', category: 'time_circuits', metricType: 'time' },

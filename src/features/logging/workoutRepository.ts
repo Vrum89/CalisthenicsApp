@@ -43,9 +43,16 @@ export async function saveWorkout(draft: WorkoutDraft, userId: string): Promise<
   if (workoutError) throw toAppError(workoutError, 'error.workout.save');
   const workout = toWorkout(workoutRow);
 
+  // L'ordine dentro il superset e' quello in cui gli esercizi stanno nella
+  // bozza, cioe' quello in cui li si esegue nel round.
+  const supersetOrders = new Map<string, number>();
+
   const { error: entriesError } = await supabase.from('workout_exercises').insert(
     entries.map((entry, index) => {
       const reps = doneReps(entry);
+      const key = entry.supersetKey;
+      const order = key === null ? null : (supersetOrders.get(key) ?? 0);
+      if (key !== null) supersetOrders.set(key, (order ?? 0) + 1);
       return fromWorkoutExercise({
         userId,
         workoutId: workout.id,
@@ -59,8 +66,8 @@ export async function saveWorkout(draft: WorkoutDraft, userId: string): Promise<
         notes: entry.notes.trim().length > 0 ? entry.notes.trim() : null,
         isExcluded: false,
         exclusionReason: null,
-        supersetKey: null,
-        supersetOrder: null,
+        supersetKey: key,
+        supersetOrder: order,
       });
     }),
   );
@@ -71,4 +78,33 @@ export async function saveWorkout(draft: WorkoutDraft, userId: string): Promise<
   }
 
   return workout;
+}
+
+/**
+ * Cancella una singola voce registrata.
+ *
+ * Serve a un errore concreto: un esercizio segnato nel giorno sbagliato, o due
+ * volte. Finora l'unico rimedio era la dashboard di Supabase.
+ *
+ * Se era l'ultima voce, sparisce anche l'allenamento: una seduta senza esercizi
+ * comparirebbe nel diario come un giorno in cui ci si e' allenati a vuoto. Il
+ * `delete` sull'allenamento e' condizionato alla verifica appena fatta, quindi
+ * non tocca nulla se nel frattempo sono rimaste altre voci.
+ */
+export async function deleteWorkoutEntry(entryId: string, workoutId: string): Promise<void> {
+  const supabase = getSupabaseClient();
+
+  const { error } = await supabase.from('workout_exercises').delete().eq('id', entryId);
+  if (error) throw toAppError(error, 'error.workout.deleteEntry');
+
+  const { count, error: countError } = await supabase
+    .from('workout_exercises')
+    .select('id', { count: 'exact', head: true })
+    .eq('workout_id', workoutId);
+
+  if (countError) throw toAppError(countError, 'error.workout.deleteEntry');
+  if (count === 0) {
+    const { error: workoutError } = await supabase.from('workouts').delete().eq('id', workoutId);
+    if (workoutError) throw toAppError(workoutError, 'error.workout.deleteEntry');
+  }
 }
