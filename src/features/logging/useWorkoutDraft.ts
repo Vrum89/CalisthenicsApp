@@ -22,6 +22,8 @@ export interface DraftController {
   readonly draft: WorkoutDraft;
   readonly setDate: (date: string) => void;
   readonly setWorkoutType: (workoutType: WorkoutType) => void;
+  /** Sostituisce la bozza in blocco: serve a caricare un giorno di scheda. */
+  readonly replace: (draft: WorkoutDraft) => void;
   readonly setNotes: (notes: string) => void;
   readonly addEntry: (entry: DraftEntry) => void;
   readonly updateEntry: (id: string, change: (entry: DraftEntry) => DraftEntry) => void;
@@ -67,6 +69,10 @@ export function useWorkoutDraft(): DraftController {
     setDraft((current) => ({ ...current, workoutType }));
   }, []);
 
+  const replace = useCallback((next: WorkoutDraft) => {
+    setDraft(next);
+  }, []);
+
   const setNotes = useCallback((notes: string) => {
     setDraft((current) => ({ ...current, notes }));
   }, []);
@@ -93,5 +99,15 @@ export function useWorkoutDraft(): DraftController {
     setDraft(createDraft(todayIso()));
   }, []);
 
-  return { draft, setDate, setWorkoutType, setNotes, addEntry, updateEntry, removeEntry, reset };
+  return {
+    draft,
+    setDate,
+    setWorkoutType,
+    replace,
+    setNotes,
+    addEntry,
+    updateEntry,
+    removeEntry,
+    reset,
+  };
 }

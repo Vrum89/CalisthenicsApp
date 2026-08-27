@@ -32,7 +32,9 @@ export async function saveWorkout(draft: WorkoutDraft, userId: string): Promise<
         userId,
         workoutDate: draft.workoutDate,
         workoutType: draft.workoutType,
-        programDayId: null,
+        // Solo un allenamento da scheda punta a un giorno: lasciarlo su una
+        // registrazione libera direbbe che nasce da un template che non c'e'.
+        programDayId: draft.workoutType === 'from_program' ? draft.programDayId : null,
         originalDate: null,
         notes: draft.notes.trim().length > 0 ? draft.notes.trim() : null,
       }),

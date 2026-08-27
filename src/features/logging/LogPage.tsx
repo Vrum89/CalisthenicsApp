@@ -44,14 +44,16 @@ import {
 } from '@/features/logging/lastPerformance';
 import type { NewExerciseDraft } from '@/features/logging/NewExerciseForm';
 import { RestTimerBar } from '@/features/logging/RestTimerBar';
+import { ProgramDayPicker } from '@/features/logging/ProgramDayPicker';
 import { SupersetCard } from '@/features/logging/SupersetCard';
+import type { ProgramDayWithExercises } from '@/features/programs/programsRepository';
+import { usePrograms } from '@/features/programs/usePrograms';
 import { WorkoutDateField } from '@/features/logging/WorkoutDateField';
 import { saveWorkout } from '@/features/logging/workoutRepository';
 import { REST_MODE, useRestTimer, windowMode } from '@/features/logging/useRestTimer';
 import { useWorkoutDraft } from '@/features/logging/useWorkoutDraft';
 
-/** `from_program` arriva con le schede (M7): senza schede non c'e' cosa scegliere. */
-const SELECTABLE_TYPES: readonly WorkoutType[] = ['freestyle', 'test'];
+const SELECTABLE_TYPES: readonly WorkoutType[] = ['from_program', 'freestyle', 'test'];
 
 const TYPE_LABEL = {
   freestyle: 'log.type.freestyle',
@@ -67,14 +69,16 @@ const TYPE_LABEL = {
  * esercizio in focus alla volta, il resto raggiungibile ma non a schermo, e
  * niente che non serva mentre si e' sotto la sbarra.
  *
- * Il tipo `from_program` non e' fra le scelte perche' senza schede non ci sarebbe
- * un giorno da cui partire: arriva con la M7, e i widget saranno gli stessi.
+ * "Da scheda" non e' un tipo di registrazione diverso: e' lo stesso flusso che
+ * parte gia' compilato con gli esercizi del giorno. I widget, il riposo e la
+ * precompilazione sono identici — cambia solo da dove arrivano le voci.
  */
 export function LogPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const exercises = useExercises();
   const history = useWorkoutHistory();
+  const programs = usePrograms();
   const draftController = useWorkoutDraft();
   const timer = useRestTimer();
 
@@ -93,6 +97,7 @@ export function LogPage() {
   // voce invece di aggiungersi in fondo.
   const [linkingTo, setLinkingTo] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
+  const [pickingDay, setPickingDay] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [saved, setSaved] = useState(false);
@@ -105,6 +110,39 @@ export function LogPage() {
   const variantsByExercise = knownVariants(history.data);
   const schemesByExercise = knownSchemes(history.data);
   const usageByExercise = exerciseUsage(history.data);
+
+  /**
+   * Carica un giorno di scheda nella bozza.
+   *
+   * Gli slot diventano voci normali: da qui in poi non c'e' differenza con un
+   * allenamento libero, e ogni valore resta editabile. La scheda ha dato il
+   * punto di partenza, non un vincolo — e l'ultima performance vince comunque
+   * sui suoi valori (regola della progressione, spec §5).
+   */
+  function loadProgramDay(day: ProgramDayWithExercises) {
+    const catalog = new Map(exercises.data.map((item) => [item.id, item]));
+
+    draftController.replace({
+      workoutDate: draft.workoutDate,
+      workoutType: 'from_program',
+      programDayId: day.day.id,
+      notes: '',
+      entries: day.exercises.flatMap((slot) => {
+        const exercise = catalog.get(slot.exerciseId);
+        if (!exercise) return [];
+        return [
+          draftEntryFor(exercise, performances.get(slot.exerciseId)?.entry ?? null, {
+            scheme: slot.defaultScheme,
+            weightKg: slot.defaultWeightKg,
+            supersetKey: slot.supersetKey,
+          }),
+        ];
+      }),
+    });
+    setFocus(0);
+    setPickingDay(false);
+    setSaved(false);
+  }
   const managing = exercises.data.find((item) => item.id === managingId) ?? null;
 
   function setManaging(exercise: Exercise | null) {
@@ -266,16 +304,26 @@ export function LogPage() {
           }}
         />
 
-        <div role="group" aria-label={t('log.type')} className="ml-auto flex shrink-0 gap-1">
+        {/* `overflow-x-auto`: tre tipi piu' la data non entrano sempre in 360 px
+            — in inglese sforavano. Meglio una riga che scorre di una pagina che
+            esce dai bordi. */}
+        <div
+          role="group"
+          aria-label={t('log.type')}
+          className="-mr-4 ml-auto flex min-w-0 gap-1 overflow-x-auto pr-4"
+        >
           {SELECTABLE_TYPES.map((type) => (
             <button
               key={type}
               type="button"
               aria-pressed={draft.workoutType === type}
               onClick={() => {
-                draftController.setWorkoutType(type);
+                // "Da scheda" non e' un'etichetta da appiccicare a una bozza
+                // qualunque: apre la scelta del giorno, ed e' quella a riempirla.
+                if (type === 'from_program') setPickingDay(true);
+                else draftController.setWorkoutType(type);
               }}
-              className={`tap-target rounded-lg px-2 text-sm font-medium ${
+              className={`tap-target shrink-0 rounded-lg px-2 text-sm font-medium whitespace-nowrap ${
                 draft.workoutType === type
                   ? 'bg-slate-700 text-slate-100'
                   : 'text-slate-500 hover:text-slate-300'
@@ -466,6 +514,17 @@ export function LogPage() {
       </main>
 
       <RestTimerBar timer={timer} />
+
+      {pickingDay && (
+        <ProgramDayPicker
+          programs={programs.data}
+          workouts={history.data.workouts}
+          onPick={loadProgramDay}
+          onClose={() => {
+            setPickingDay(false);
+          }}
+        />
+      )}
 
       {(picking || managing !== null) && (
         <ExercisePicker

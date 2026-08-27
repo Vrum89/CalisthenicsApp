@@ -52,6 +52,8 @@ export interface DraftEntry {
 export interface WorkoutDraft {
   readonly workoutDate: string;
   readonly workoutType: WorkoutType;
+  /** Il giorno di scheda da cui nasce, se `workoutType` e' `from_program`. */
+  readonly programDayId: string | null;
   readonly notes: string;
   readonly entries: readonly DraftEntry[];
 }
@@ -59,7 +61,13 @@ export interface WorkoutDraft {
 const DEFAULT_OPEN_REPS = 8;
 
 export function createDraft(workoutDate: string): WorkoutDraft {
-  return { workoutDate, workoutType: 'freestyle', notes: '', entries: [] };
+  return {
+    workoutDate,
+    workoutType: 'freestyle',
+    programDayId: null,
+    notes: '',
+    entries: [],
+  };
 }
 
 /** Id locale della voce: serve solo a React finche' la bozza non e' salvata. */
@@ -88,8 +96,22 @@ export function setsFromScheme(scheme: string, fallbackReps: number): DraftSet[]
  * record falso. Il valore precedente resta visibile accanto al campo come
  * riferimento, che e' quello che serve davvero per batterlo.
  */
-export function draftEntryFor(exercise: Exercise, last: WorkoutExercise | null): DraftEntry {
-  const scheme = last?.scheme ?? '';
+export function draftEntryFor(
+  exercise: Exercise,
+  last: WorkoutExercise | null,
+  /**
+   * Valori di partenza dalla scheda. Contano SOLO in assenza di storico: la
+   * regola della progressione (spec §5) dice che l'ultima performance vince
+   * sempre, altrimenti una scheda scritta a settembre riporterebbe indietro a
+   * dicembre.
+   */
+  fromProgram?: {
+    readonly scheme: string | null;
+    readonly weightKg: number | null;
+    readonly supersetKey: string | null;
+  },
+): DraftEntry {
+  const scheme = last?.scheme ?? fromProgram?.scheme ?? '';
 
   /**
    * In modalita' aperta lo scheme non dice quante serie erano: `progressive` non
@@ -112,10 +134,10 @@ export function draftEntryFor(exercise: Exercise, last: WorkoutExercise | null):
     scheme,
     sets: metricConfig(exercise.metricType).inputKind === 'set-checkboxes' ? sets : [],
     value: null,
-    addedWeightKg: last?.addedWeightKg ?? null,
+    addedWeightKg: last?.addedWeightKg ?? fromProgram?.weightKg ?? null,
     variant: last?.variant ?? '',
     notes: '',
-    supersetKey: null,
+    supersetKey: fromProgram?.supersetKey ?? null,
   };
 }
 
