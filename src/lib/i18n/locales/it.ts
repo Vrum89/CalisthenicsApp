@@ -207,6 +207,10 @@ export const it = {
   'programs.since': 'dal {date}',
   'programs.close': 'Chiudi la scheda',
   'programs.reopen': 'Riapri la scheda',
+  'programs.closeHint':
+    'Chiuderla le mette una data di fine: smette di proporti i suoi giorni e finisce in fondo alla scelta, fra le schede chiuse. Resta tutto — giorni, esercizi e allenamenti già registrati — e puoi riaprirla quando vuoi.',
+  'programs.reopenHint':
+    'Riaprirla toglie la data di fine: torna fra le schede attive e ricomincia a proporti il giorno che tocca.',
   'programs.delete': 'Elimina la scheda',
   'programs.deleteBlocked': 'Questa scheda ha già degli allenamenti registrati: si chiude, non si cancella — altrimenti perderesti il collegamento con quelle sessioni.',
   'programs.days': 'Giorni',
@@ -220,7 +224,9 @@ export const it = {
   'programs.removeSlot': 'Togli {name} dal giorno',
   'programs.defaultScheme': 'Scheme di partenza',
   'programs.defaultWeight': 'Zavorra di partenza',
-  'programs.hint': 'Sono valori di partenza: quando registri l’allenamento vince sempre l’ultima performance, e resta tutto editabile.',
+  'programs.superset.link': 'Aggancia a quello sopra',
+  'programs.superset.unlink': 'Stacca dal superset',
+  'programs.hint': 'Quando registri l’allenamento questi valori vengono usati così come sono; dove li lasci vuoti viene proposta l’ultima performance. Resta tutto editabile mentre ti alleni.',
   'programs.saving': 'Salvo…',
 
   'bodyWeight.title': 'Peso corporeo',

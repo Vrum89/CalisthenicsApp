@@ -3,9 +3,12 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, LoaderCircle, Plus, TriangleAlert } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { newSupersetKey, normalizeSupersets, supersetRun } from '@/domain/superset';
 import type { ProgramExercise } from '@/domain/types';
 import { useAuth } from '@/features/auth/useAuth';
 import { useExercises } from '@/features/exercises/useExercises';
+import { useWorkoutHistory } from '@/features/history/useWorkoutHistory';
+import { knownSchemes } from '@/features/logging/lastPerformance';
 import { ProgramDayEditor } from '@/features/programs/ProgramCard';
 import {
   addProgramExercise,
@@ -47,6 +50,10 @@ export function ProgramsPage() {
   const { user } = useAuth();
   const programs = usePrograms();
   const exercises = useExercises();
+  // Lo storico serve solo a suggerire gli scheme gia' usati: scrivere una
+  // scheda vuol dire quasi sempre ripartire da cio' che si sta gia' facendo.
+  const history = useWorkoutHistory();
+  const schemesByExercise = knownSchemes(history.data);
 
   const [openId, setOpenId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -79,26 +86,124 @@ export function ProgramsPage() {
         notes: null,
       });
       // Una scheda senza giorni non e' utilizzabile: il primo si crea con lei.
-      await createDay({ userId: user.id, programId: program.id, name: 'A', sortOrder: 0 });
+      await createDay({
+        userId: user.id,
+        programId: program.id,
+        name: 'A',
+        sortOrder: 0,
+      });
       setOpenId(program.id);
     });
   }
 
   /**
-   * Scambia due slot adiacenti.
+   * Scrive a database un nuovo ordine di slot.
    *
-   * Riordinare significa riscrivere `sortOrder`, che e' l'unica cosa che il
-   * database sa dell'ordine: senza, l'elenco tornerebbe come prima al ricarico.
+   * L'ordine e i superset stanno nella stessa operazione perche' sono la stessa
+   * cosa: un superset e' un tratto contiguo, e spostare una riga puo' spezzarlo.
+   * `normalizeSupersets` decide le chiavi finali, qui si scrivono solo le righe
+   * che cambiano davvero — `sortOrder` diventa 0..n-1, cosi' un giorno con
+   * buchi si ricompatta da solo.
    */
+  async function writeSlots(
+    /** Le righe come stanno a database: il metro per capire cosa e' cambiato. */
+    saved: readonly ProgramExercise[],
+    next: readonly ProgramExercise[],
+  ) {
+    const assignments = normalizeSupersets(next);
+    const savedById = new Map(saved.map((slot) => [slot.id, slot]));
+
+    for (const [index, slot] of next.entries()) {
+      const assignment = assignments[index];
+      const before = savedById.get(slot.id);
+      if (!assignment || !before) continue;
+
+      const changes: {
+        sortOrder?: number;
+        supersetKey?: string | null;
+        supersetOrder?: number | null;
+      } = {};
+      if (before.sortOrder !== index) changes.sortOrder = index;
+      if (before.supersetKey !== assignment.supersetKey) {
+        changes.supersetKey = assignment.supersetKey;
+      }
+      if (before.supersetOrder !== assignment.supersetOrder) {
+        changes.supersetOrder = assignment.supersetOrder;
+      }
+
+      if (Object.keys(changes).length > 0) await updateProgramExercise(slot.id, changes);
+    }
+  }
+
+  function applySlots(saved: readonly ProgramExercise[], next: readonly ProgramExercise[]) {
+    run(() => writeSlots(saved, next));
+  }
+
+  /**
+   * Toglie uno slot e rimette in ordine quelli che restano: senza, cancellare
+   * meta' di un superset lascerebbe l'altra meta' agganciata a nessuno.
+   */
+  function removeSlot(slots: readonly ProgramExercise[], slot: ProgramExercise) {
+    const rest = slots.filter((candidate) => candidate.id !== slot.id);
+    run(async () => {
+      await deleteProgramExercise(slot.id);
+      await writeSlots(rest, rest);
+    });
+  }
+
   function moveSlot(slots: readonly ProgramExercise[], slot: ProgramExercise, direction: -1 | 1) {
     const index = slots.findIndex((candidate) => candidate.id === slot.id);
     const other = slots[index + direction];
     if (!other) return;
 
-    run(async () => {
-      await updateProgramExercise(slot.id, { sortOrder: other.sortOrder });
-      await updateProgramExercise(other.id, { sortOrder: slot.sortOrder });
-    });
+    const next = [...slots];
+    next[index] = other;
+    next[index + direction] = slot;
+    applySlots(slots, next);
+  }
+
+  /**
+   * Aggancia uno slot a quello sopra: nasce un superset, o si allarga quello
+   * che c'e' gia'. Si agganciano i due TRATTI interi, non le due righe: se
+   * sopra c'era gia' una coppia, il terzo entra nello stesso giro invece di
+   * spezzarla in due superset.
+   */
+  function linkSlot(slots: readonly ProgramExercise[], slot: ProgramExercise) {
+    const index = slots.findIndex((candidate) => candidate.id === slot.id);
+    const previous = slots[index - 1];
+    if (!previous) return;
+
+    const key = previous.supersetKey ?? newSupersetKey();
+    const merged = new Set(
+      [...supersetRun(slots, index - 1), ...supersetRun(slots, index)].map((member) => member.id),
+    );
+    applySlots(
+      slots,
+      slots.map((candidate) =>
+        merged.has(candidate.id) ? { ...candidate, supersetKey: key } : candidate,
+      ),
+    );
+  }
+
+  /**
+   * Stacca uno slot da quello sopra. Il tratto si divide in due: cio' che resta
+   * sopra tiene la chiave, da qui in giu' se ne prende una nuova — e se una
+   * delle due parti resta da sola, `normalizeSupersets` le toglie la chiave.
+   */
+  function unlinkSlot(slots: readonly ProgramExercise[], slot: ProgramExercise) {
+    const index = slots.findIndex((candidate) => candidate.id === slot.id);
+    const key = newSupersetKey();
+    const tail = new Set(
+      supersetRun(slots, index)
+        .filter((member) => slots.findIndex((c) => c.id === member.id) >= index)
+        .map((member) => member.id),
+    );
+    applySlots(
+      slots,
+      slots.map((candidate) =>
+        tail.has(candidate.id) ? { ...candidate, supersetKey: key } : candidate,
+      ),
+    );
   }
 
   function renderProgram(detail: ProgramDetail) {
@@ -122,7 +227,9 @@ export function ProgramsPage() {
           <span className="block text-xs text-slate-500">
             {program.endDate === null
               ? `${t('programs.since', { date: formatDate(language, program.startDate) })} · ${t('programs.active')}`
-              : t('programs.closed', { date: formatDate(language, program.endDate) })}
+              : t('programs.closed', {
+                  date: formatDate(language, program.endDate),
+                })}
           </span>
         </button>
 
@@ -155,7 +262,11 @@ export function ProgramsPage() {
                   defaultValue={program.startDate}
                   onBlur={(event) => {
                     if (event.target.value !== '' && event.target.value !== program.startDate) {
-                      run(() => updateProgram(program.id, { startDate: event.target.value }));
+                      run(() =>
+                        updateProgram(program.id, {
+                          startDate: event.target.value,
+                        }),
+                      );
                     }
                   }}
                   className="tap-target w-full rounded-xl border border-slate-700 bg-slate-900 px-3 text-base text-slate-100"
@@ -180,13 +291,16 @@ export function ProgramsPage() {
             <p className="text-xs leading-relaxed text-slate-500">{t('programs.hint')}</p>
 
             <div className="space-y-3">
-              <p className="text-xs tracking-wider text-slate-500 uppercase">{t('programs.days')}</p>
+              <p className="text-xs tracking-wider text-slate-500 uppercase">
+                {t('programs.days')}
+              </p>
 
               {days.map((day) => (
                 <ProgramDayEditor
                   key={day.day.id}
                   day={day}
                   exercises={exercises.data}
+                  schemesByExercise={schemesByExercise}
                   busy={busy}
                   onAddExercise={(exerciseId) => {
                     if (!user) return;
@@ -210,7 +324,13 @@ export function ProgramsPage() {
                     moveSlot(day.exercises, slot, direction);
                   }}
                   onRemoveSlot={(slot) => {
-                    run(() => deleteProgramExercise(slot.id));
+                    removeSlot(day.exercises, slot);
+                  }}
+                  onLinkSlot={(slot) => {
+                    linkSlot(day.exercises, slot);
+                  }}
+                  onUnlinkSlot={(slot) => {
+                    unlinkSlot(day.exercises, slot);
                   }}
                   onRename={(name) => {
                     run(() => renameDay(day.day.id, name));
@@ -242,31 +362,36 @@ export function ProgramsPage() {
               </button>
             </div>
 
-            <div className="flex flex-wrap gap-2 border-t border-slate-800 pt-3">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => {
-                  run(() =>
-                    updateProgram(program.id, {
-                      endDate: program.endDate === null ? todayIso() : null,
-                    }),
-                  );
-                }}
-                className="tap-target flex-1 rounded-xl border border-slate-700 px-3 text-sm font-medium text-slate-300 hover:bg-slate-900 disabled:opacity-40"
-              >
-                {program.endDate === null ? t('programs.close') : t('programs.reopen')}
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => {
-                  run(() => deleteProgram(program.id));
-                }}
-                className="tap-target flex-1 rounded-xl border border-slate-700 px-3 text-sm font-medium text-red-400 hover:bg-slate-900 disabled:opacity-40"
-              >
-                {t('programs.delete')}
-              </button>
+            <div className="space-y-2 border-t border-slate-800 pt-3">
+              <p className="text-xs leading-relaxed text-slate-500">
+                {program.endDate === null ? t('programs.closeHint') : t('programs.reopenHint')}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    run(() =>
+                      updateProgram(program.id, {
+                        endDate: program.endDate === null ? todayIso() : null,
+                      }),
+                    );
+                  }}
+                  className="tap-target flex-1 rounded-xl border border-slate-700 px-3 text-sm font-medium text-slate-300 hover:bg-slate-900 disabled:opacity-40"
+                >
+                  {program.endDate === null ? t('programs.close') : t('programs.reopen')}
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    run(() => deleteProgram(program.id));
+                  }}
+                  className="tap-target flex-1 rounded-xl border border-slate-700 px-3 text-sm font-medium text-red-400 hover:bg-slate-900 disabled:opacity-40"
+                >
+                  {t('programs.delete')}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -291,7 +416,9 @@ export function ProgramsPage() {
       </header>
 
       <main className="flex-1 space-y-4 pb-8">
-        {programs.status === 'loading' && (
+        {/* Solo al primo caricamento: durante un ricarico l'elenco resta a
+            schermo, e la riga "carico" farebbe saltare il layout ogni volta. */}
+        {programs.status === 'loading' && programs.data.length === 0 && (
           <p className="flex items-center gap-2 text-sm text-slate-400">
             <LoaderCircle aria-hidden className="size-4 animate-spin" />
             {t('common.loading')}

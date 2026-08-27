@@ -212,7 +212,7 @@ export function BodyWeightPage() {
           </button>
         </form>
 
-        {query.status === 'loading' && (
+        {query.status === 'loading' && entries.length === 0 && (
           <p className="flex items-center gap-2 text-sm text-slate-400">
             <LoaderCircle aria-hidden className="size-4 animate-spin" />
             {t('bodyWeight.loading')}
