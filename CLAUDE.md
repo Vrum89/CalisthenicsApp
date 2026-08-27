@@ -49,6 +49,8 @@ Env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. **Mai committare segreti**; 
 - Tap target ≥ 44px; safe-area insets (notch/piega e ritagli fotocamera del cover); testa a **~360×360** e **~411×915**.
 - **Subito dopo la Milestone 1**, fammi provare l'installazione della PWA sul cover display: se non risulta eseguibile lì, valutiamo il wrapper TWA (backlog §10).
 
-## Git
+## Git e versioni
 
 Commit piccoli e frequenti, uno per unità di lavoro; messaggi chiari. Il repo è la fonte di verità: tienilo sempre allineato.
+
+**Alza `version` in `package.json` a ogni milestone chiusa** (minor: `0.2.0` → `0.3.0`) e a ogni gruppo di correzioni consegnato (patch: `0.2.0` → `0.2.1`). La versione e la data di build si vedono in fondo alla schermata iniziale: in una PWA il service worker può servire una copia vecchia, e senza quella riga «l'ho aggiornata?» non ha risposta.

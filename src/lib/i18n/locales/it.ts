@@ -64,6 +64,7 @@ export const it = {
   'dashboard.exercise': 'Esercizio',
   'dashboard.noExercises': 'Nessun esercizio nel catalogo.',
   'dashboard.noData': 'Nessun allenamento registrato per questo esercizio.',
+  'dashboard.manageExercise': 'Gestisci o elimina questo esercizio →',
   'dashboard.noChartNote': 'Voce di solo diario: niente da graficare, sotto trovi le annotazioni.',
   'dashboard.noChartSingle': 'Serve più di una sessione con un valore per disegnare un andamento.',
   'dashboard.variants': 'Condizione',

@@ -59,6 +59,7 @@ export const en: Record<TranslationKey, string> = {
   'dashboard.exercise': 'Exercise',
   'dashboard.noExercises': 'No exercises in the catalogue.',
   'dashboard.noData': 'No workouts logged for this exercise yet.',
+  'dashboard.manageExercise': 'Manage or delete this exercise →',
   'dashboard.noChartNote': 'Diary entry only: nothing to chart, the notes are below.',
   'dashboard.noChartSingle': 'More than one session with a value is needed to draw a trend.',
   'dashboard.variants': 'Condition',
