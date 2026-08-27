@@ -381,6 +381,7 @@ Backup JSON automatico e schedulato (es. GitHub Actions + storage esterno).
 Durata del riposo memorizzata per esercizio (i dati storici mostrano riposi diversi per esercizio).
 Log serie-per-serie anche per metric_type diversi da `sets`.
 Sistema di blocchi generico e annidato per superset/circuiti (riposo prescritto per-blocco, round come attributo esplicito, blocchi arbitrari). In v1 il superset è un raggruppamento leggero (`supersetKey`), sufficiente per il caso reale.
+Superset come condizione automatica in dashboard: far sì che le sessioni eseguite in superset finiscano in un chip a parte, separate da quelle isolate — 25 trazioni alternate ai piegamenti non sono 25 trazioni fresche. Oggi il legame si vede come contesto sulla riga dello storico ("in superset con …") ma non entra nei calcoli. Rimandato perché sovrascriverebbe le condizioni scritte a mano, ed è una decisione da prendere dopo aver visto qualche mese di dati.
 Modalità offline-first con coda di sincronizzazione (non necessaria finché la connessione è requisito).
 Wrapper TWA (Bubblewrap) come contingenza, solo se la PWA installata non risultasse eseguibile sul cover display del Razr 50 (vedi §2.5). Non necessario se la PWA compare nell'elenco app del display esterno.
 > **Fuori scope permanente (deciso):** registrazione del *tempo di riposo tra le serie come metrica*. Il rest timer resta un assistente dal vivo, non un dato.

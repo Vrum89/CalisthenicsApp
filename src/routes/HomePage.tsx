@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChartLine, ChevronRight, CirclePlus, Dumbbell, LogOut, Scale } from 'lucide-react';
+import {
+  ChartLine,
+  ChevronRight,
+  CirclePlus,
+  ClipboardList,
+  Dumbbell,
+  LogOut,
+  Scale,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -29,6 +37,12 @@ const DESTINATIONS: readonly {
     icon: ChartLine,
     labelKey: 'nav.dashboard',
     hintKey: 'nav.dashboardHint',
+  },
+  {
+    to: '/programs',
+    icon: ClipboardList,
+    labelKey: 'nav.programs',
+    hintKey: 'nav.programsHint',
   },
   {
     to: '/weight',

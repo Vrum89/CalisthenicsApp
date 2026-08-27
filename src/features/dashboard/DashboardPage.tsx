@@ -192,7 +192,19 @@ export function DashboardPage() {
               {exercise && stats && (
                 <>
                   {stats.points.length === 0 ? (
-                    <p className="py-6 text-sm text-slate-400">{t('dashboard.noData')}</p>
+                    <div className="space-y-3 py-6">
+                      <p className="text-sm text-slate-400">{t('dashboard.noData')}</p>
+                      {/* Un esercizio senza registrazioni e' quasi sempre uno da
+                          togliere: o e' appena stato svuotato cancellando le
+                          sessioni, o non e' mai servito. Restare qui a guardare
+                          "nessun allenamento" non porta da nessuna parte. */}
+                      <Link
+                        to={`/log?manage=${exercise.id}`}
+                        className="inline-flex text-sm font-medium text-amber-400 underline underline-offset-2"
+                      >
+                        {t('dashboard.manageExercise')}
+                      </Link>
+                    </div>
                   ) : (
                     <>
                       {variants.length > 1 && (

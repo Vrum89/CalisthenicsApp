@@ -5,6 +5,7 @@ import { RequireAuth } from '@/features/auth/RequireAuth';
 import { BodyWeightPage } from '@/features/bodyWeight/BodyWeightPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { LogPage } from '@/features/logging/LogPage';
+import { ProgramsPage } from '@/features/programs/ProgramsPage';
 import { HomePage } from '@/routes/HomePage';
 
 export function App() {
@@ -33,6 +34,14 @@ export function App() {
         element={
           <RequireAuth>
             <DashboardPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/programs"
+        element={
+          <RequireAuth>
+            <ProgramsPage />
           </RequireAuth>
         }
       />
