@@ -202,6 +202,10 @@ export const en: Record<TranslationKey, string> = {
   'programs.since': 'since {date}',
   'programs.close': 'Close the program',
   'programs.reopen': 'Reopen the program',
+  'programs.closeHint':
+    'Closing it sets an end date: it stops suggesting its days and moves to the bottom of the picker, among the closed programs. Nothing is lost — days, exercises and logged workouts stay — and you can reopen it whenever you want.',
+  'programs.reopenHint':
+    'Reopening it clears the end date: it goes back among the active programs and starts suggesting the next day again.',
   'programs.delete': 'Delete the program',
   'programs.deleteBlocked': 'This program already has logged workouts: close it rather than delete it — otherwise you would lose the link with those sessions.',
   'programs.days': 'Days',
@@ -215,7 +219,9 @@ export const en: Record<TranslationKey, string> = {
   'programs.removeSlot': 'Remove {name} from the day',
   'programs.defaultScheme': 'Starting scheme',
   'programs.defaultWeight': 'Starting added weight',
-  'programs.hint': 'These are starting values: when you log the workout your last performance always wins, and everything stays editable.',
+  'programs.superset.link': 'Link to the one above',
+  'programs.superset.unlink': 'Unlink from the superset',
+  'programs.hint': 'When you log the workout these values are used as they are; where you leave them empty your last performance is proposed instead. Everything stays editable while you train.',
   'programs.saving': 'Saving…',
 
   'bodyWeight.title': 'Body weight',

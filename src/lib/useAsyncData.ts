@@ -30,10 +30,18 @@ export function useAsyncData<T>(load: () => Promise<T>, empty: T): AsyncData<T> 
   });
   const [reloadToken, setReloadToken] = useState(0);
 
+  /**
+   * Ricarica tenendo a schermo i dati che ci sono gia'.
+   *
+   * Svuotarli avrebbe voluto dire, a ogni modifica di una scheda, veder sparire
+   * e ricomparire l'elenco: un lampo bianco che si legge come "si e' resettato
+   * qualcosa". I dati vecchi sono corretti fino a prova contraria — la prova
+   * arriva un istante dopo, dalla risposta.
+   */
   const reload = useCallback(() => {
-    setState({ status: 'loading', data: empty, error: null });
+    setState((current) => ({ status: 'loading', data: current.data, error: null }));
     setReloadToken((token) => token + 1);
-  }, [empty]);
+  }, []);
 
   useEffect(() => {
     let active = true;

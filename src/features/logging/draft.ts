@@ -100,10 +100,14 @@ export function draftEntryFor(
   exercise: Exercise,
   last: WorkoutExercise | null,
   /**
-   * Valori di partenza dalla scheda. Contano SOLO in assenza di storico: la
-   * regola della progressione (spec §5) dice che l'ultima performance vince
-   * sempre, altrimenti una scheda scritta a settembre riporterebbe indietro a
-   * dicembre.
+   * Valori scritti nella scheda. Quando ci sono VINCONO sull'ultima
+   * performance: sono una decisione presa a mente fredda su cosa fare oggi,
+   * mentre l'ultima performance e' solo cio' che e' successo l'altra volta.
+   * Scrivere `5x5` in una scheda e ritrovarsi `5x8` perche' l'ultima volta era
+   * andata cosi' vorrebbe dire che il campo non serve a niente.
+   *
+   * La regola della progressione (spec §5) resta dove conta: sui campi che la
+   * scheda lascia vuoti, e sul confronto col precedente sempre a schermo.
    */
   fromProgram?: {
     readonly scheme: string | null;
@@ -111,7 +115,7 @@ export function draftEntryFor(
     readonly supersetKey: string | null;
   },
 ): DraftEntry {
-  const scheme = last?.scheme ?? fromProgram?.scheme ?? '';
+  const scheme = fromProgram?.scheme ?? last?.scheme ?? '';
 
   /**
    * In modalita' aperta lo scheme non dice quante serie erano: `progressive` non
@@ -134,7 +138,7 @@ export function draftEntryFor(
     scheme,
     sets: metricConfig(exercise.metricType).inputKind === 'set-checkboxes' ? sets : [],
     value: null,
-    addedWeightKg: last?.addedWeightKg ?? fromProgram?.weightKg ?? null,
+    addedWeightKg: fromProgram?.weightKg ?? last?.addedWeightKg ?? null,
     variant: last?.variant ?? '',
     notes: '',
     supersetKey: fromProgram?.supersetKey ?? null,
@@ -265,21 +269,13 @@ export function removeRound(entries: readonly DraftEntry[]): DraftEntry[] {
   );
 }
 
-export function newSupersetKey(): string {
-  return crypto.randomUUID();
-}
-
 // --- Modifiche alle serie ---------------------------------------------------
 
 function withSets(entry: DraftEntry, sets: readonly DraftSet[]): DraftEntry {
   return { ...entry, sets };
 }
 
-function mapSet(
-  entry: DraftEntry,
-  index: number,
-  change: (set: DraftSet) => DraftSet,
-): DraftEntry {
+function mapSet(entry: DraftEntry, index: number, change: (set: DraftSet) => DraftSet): DraftEntry {
   return withSets(
     entry,
     entry.sets.map((set, position) => (position === index ? change(set) : set)),

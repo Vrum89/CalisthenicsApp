@@ -13,6 +13,7 @@ import { AppShell } from '@/components/AppShell';
 import { AppError, describeError } from '@/lib/errors';
 import { todayIso } from '@/lib/dates';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { newSupersetKey } from '@/domain/superset';
 import type { Exercise, WorkoutType } from '@/domain/types';
 import { useAuth } from '@/features/auth/useAuth';
 import {
@@ -30,7 +31,6 @@ import {
   draftEntryFor,
   filledEntries,
   groupEntries,
-  newSupersetKey,
   removeRound,
   type DraftEntry,
 } from '@/features/logging/draft';
@@ -122,22 +122,29 @@ export function LogPage() {
   function loadProgramDay(day: ProgramDayWithExercises) {
     const catalog = new Map(exercises.data.map((item) => [item.id, item]));
 
+    const loaded = day.exercises.flatMap((slot) => {
+      const exercise = catalog.get(slot.exerciseId);
+      if (!exercise) return [];
+      return [
+        draftEntryFor(exercise, performances.get(slot.exerciseId)?.entry ?? null, {
+          scheme: slot.defaultScheme,
+          weightKg: slot.defaultWeightKg,
+          supersetKey: slot.supersetKey,
+        }),
+      ];
+    });
+
     draftController.replace({
       workoutDate: draft.workoutDate,
       workoutType: 'from_program',
       programDayId: day.day.id,
       notes: '',
-      entries: day.exercises.flatMap((slot) => {
-        const exercise = catalog.get(slot.exerciseId);
-        if (!exercise) return [];
-        return [
-          draftEntryFor(exercise, performances.get(slot.exerciseId)?.entry ?? null, {
-            scheme: slot.defaultScheme,
-            weightKg: slot.defaultWeightKg,
-            supersetKey: slot.supersetKey,
-          }),
-        ];
-      }),
+      // I superset della scheda arrivano gia' agganciati: vanno pareggiati nei
+      // round come quando si aggancia a mano, o due scheme diversi (`5x5` e
+      // `3x10`) darebbero un giro mezzo vuoto.
+      entries: groupEntries(loaded).flatMap((group) =>
+        group.supersetKey === null ? group.entries : alignRounds(group.entries),
+      ),
     });
     setFocus(0);
     setPickingDay(false);
@@ -447,10 +454,8 @@ export function LogPage() {
                 {t('log.superset.link')}
               </button>
             )}
-
           </>
         )}
-
 
         <button
           type="button"
