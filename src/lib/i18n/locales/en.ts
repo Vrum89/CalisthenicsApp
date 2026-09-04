@@ -92,6 +92,10 @@ export const en: Record<TranslationKey, string> = {
   'stat.trend': 'Trend',
   'stat.trendSub': 'first → latest',
 
+  'style.title': 'The stylesheet is missing',
+  'style.body': 'The app itself arrived, but the file that lays it out did not: it happens when the connection drops at the wrong moment, or when a broken copy is left in storage. Retrying and reloading did not help. This button clears everything the app keeps on the device and starts clean: nothing is lost, your workouts live on the server.',
+  'style.reset': 'Clear the cache and restart',
+
   'date.title': 'Pick the date',
   'date.previousMonth': 'Previous month',
   'date.nextMonth': 'Next month',
