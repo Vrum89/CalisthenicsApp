@@ -100,6 +100,7 @@ export const it = {
   'style.title': 'Manca il foglio di stile',
   'style.body': 'L’app è arrivata, ma il file che la impagina no: succede se la connessione si interrompe al momento sbagliato o se in memoria è rimasta una copia rotta. Ho già riprovato e ricaricato senza risultato. Questo pulsante svuota tutto quello che l’app tiene da parte e riparte pulita: non perdi niente, i tuoi allenamenti sono sul server.',
   'style.reset': 'Svuota la cache e riavvia',
+  'style.detail': 'Dettaglio tecnico: {detail} · versione {version}',
 
   'date.title': 'Scegli la data',
   'date.previousMonth': 'Mese precedente',

@@ -70,14 +70,17 @@ export function DatePicker({
       role="dialog"
       aria-modal="true"
       aria-label={t('date.title')}
-      className="px-safe pt-safe pb-safe fixed inset-0 z-40 flex overflow-y-auto bg-slate-950"
+      /* `h-dvh` e non `inset-0`: su Android l'altezza del viewport cambia con
+         la barra di sistema, e un pannello alto quanto la finestra "teorica"
+         finisce sotto quella barra — il fondo si vede tagliato. L'unita'
+         dinamica misura lo spazio che c'e' davvero, adesso. */
+      className="px-safe pt-safe pb-safe fixed top-0 left-0 z-40 flex h-dvh w-full justify-center bg-slate-950"
     >
-      {/* `m-auto` e non `items-center`: centra il pannello quando c'e' spazio —
-          sul display principale — ma se un mese a sei settimane non ci sta in
-          360 px lo lascia scorrere tutto, senza tagliargli la testa. Cioe'
-          esattamente cio' che il dialog di sistema non fa. */}
-      <div className="m-auto w-full max-w-md px-3 py-2">
-        <header className="flex items-center gap-1">
+      {/* Tre fasce: intestazione e scorciatoie restano sempre a schermo, e a
+          cedere e' solo la griglia, che scorre. Su 360x360 e' cio' che tiene i
+          pulsanti raggiungibili anche quando il mese occupa sei settimane. */}
+      <div className="flex h-full w-full max-w-md flex-col px-3 py-2">
+        <header className="flex shrink-0 items-center gap-1">
           <button
             type="button"
             aria-label={t('date.previousMonth')}
@@ -114,7 +117,7 @@ export function DatePicker({
           </button>
         </header>
 
-        <div aria-hidden className="grid grid-cols-7 pt-1 pb-0.5">
+        <div aria-hidden className="grid shrink-0 grid-cols-7 pt-1 pb-0.5">
           {initials.map((initial, index) => (
             <span key={index} className="text-center text-[0.7rem] text-slate-500 uppercase">
               {initial}
@@ -122,7 +125,9 @@ export function DatePicker({
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-0.5">
+        {/* `min-h-0` insieme a `flex-1`: senza, un figlio flex non si lascia
+            rimpicciolire sotto il proprio contenuto e lo scroll non parte. */}
+        <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-7 gap-0.5 overflow-y-auto">
           {weeks.flat().map((day, index) => {
             if (day === null) return <span key={index} />;
 
@@ -157,7 +162,7 @@ export function DatePicker({
 
         {/* Le due scelte che coprono quasi tutti i casi: si registra l'allenamento
             appena fatto, o quello di ieri sera che ci si e' dimenticati. */}
-        <div className="flex gap-2 pt-2">
+        <div className="flex shrink-0 gap-2 pt-2">
           <button
             type="button"
             onClick={() => {

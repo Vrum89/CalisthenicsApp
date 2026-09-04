@@ -95,6 +95,7 @@ export const en: Record<TranslationKey, string> = {
   'style.title': 'The stylesheet is missing',
   'style.body': 'The app itself arrived, but the file that lays it out did not: it happens when the connection drops at the wrong moment, or when a broken copy is left in storage. Retrying and reloading did not help. This button clears everything the app keeps on the device and starts clean: nothing is lost, your workouts live on the server.',
   'style.reset': 'Clear the cache and restart',
+  'style.detail': 'Technical detail: {detail} · version {version}',
 
   'date.title': 'Pick the date',
   'date.previousMonth': 'Previous month',

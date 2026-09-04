@@ -1,6 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "rewrites": [
+    {
+      "//": "Routing SPA: ogni indirizzo torna all'app. Gli asset con hash sono ESCLUSI di proposito: se uno di loro non c'e' — deploy in propagazione, riferimento a una versione appena sostituita — il catch-all rispondeva index.html con content-type text/html, e il browser rifiutava in silenzio un CSS che sembrava arrivato. Meglio un 404 onesto, che si vede e si puo' gestire.",
+      "source": "/((?!assets/).*)",
+      "destination": "/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/sw.js",
