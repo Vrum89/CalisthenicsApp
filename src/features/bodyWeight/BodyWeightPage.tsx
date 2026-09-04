@@ -9,8 +9,9 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { ChevronLeft, LoaderCircle, TriangleAlert } from 'lucide-react';
+import { CalendarDays, ChevronLeft, LoaderCircle, TriangleAlert } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
+import { DatePicker } from '@/components/DatePicker';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { AppError, describeError } from '@/lib/errors';
 import { formatAxisDate, formatCompactDate, formatDate, todayIso } from '@/lib/dates';
@@ -66,6 +67,7 @@ export function BodyWeightPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [saved, setSaved] = useState(false);
+  const [picking, setPicking] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -165,17 +167,21 @@ export function BodyWeightPage() {
               >
                 {t('bodyWeight.date')}
               </label>
-              <input
+              {/* Il calendario e' il nostro, non quello di sistema: anche una
+                  pesata si segna volentieri dal cover display, dove il dialog
+                  di Android si taglia (vedi `DatePicker`). */}
+              <button
                 id="measuredOn"
-                type="date"
-                required
-                max={todayIso()}
-                value={measuredOn}
-                onChange={(event) => {
-                  setMeasuredOn(event.target.value);
+                type="button"
+                aria-haspopup="dialog"
+                onClick={() => {
+                  setPicking(true);
                 }}
-                className="tap-target w-full rounded-xl border border-slate-700 bg-slate-900 px-3 text-base text-slate-100"
-              />
+                className="tap-target flex w-full items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-3 text-base text-slate-100 tabular-nums"
+              >
+                <CalendarDays aria-hidden className="size-4 shrink-0 text-slate-500" />
+                {formatCompactDate(language, measuredOn)}
+              </button>
             </div>
           </div>
 
@@ -211,6 +217,20 @@ export function BodyWeightPage() {
             {saving ? t('bodyWeight.saving') : t('bodyWeight.save')}
           </button>
         </form>
+
+        {picking && (
+          <DatePicker
+            value={measuredOn}
+            max={todayIso()}
+            onPick={(iso) => {
+              setMeasuredOn(iso);
+              setPicking(false);
+            }}
+            onClose={() => {
+              setPicking(false);
+            }}
+          />
+        )}
 
         {query.status === 'loading' && entries.length === 0 && (
           <p className="flex items-center gap-2 text-sm text-slate-400">

@@ -70,6 +70,69 @@ export function formatAxisDate(language: Language, iso: string): string {
   return new Intl.DateTimeFormat(DATE_LOCALE[language], { day: '2-digit', month: '2-digit' }).format(date);
 }
 
+// --- Calendario -------------------------------------------------------------
+
+/**
+ * Le parti di una data ISO. Servono a disegnare un calendario nostro: il
+ * calendario di sistema, sul cover display del Razr, esce dallo schermo.
+ */
+export function isoParts(iso: string): { year: number; month: number; day: number } | null {
+  const date = parseIsoDate(iso);
+  if (!date) return null;
+  return { year: date.getFullYear(), month: date.getMonth(), day: date.getDate() };
+}
+
+/** `month` e' 0-based come in `Date`. Normalizza da solo mese 12 o -1. */
+export function isoFrom(year: number, month: number, day: number): string {
+  const date = new Date(year, month, day);
+  const shiftedMonth = String(date.getMonth() + 1).padStart(2, '0');
+  const shiftedDay = String(date.getDate()).padStart(2, '0');
+  return `${String(date.getFullYear())}-${shiftedMonth}-${shiftedDay}`;
+}
+
+/** La stessa data spostata di N giorni: "ieri" senza aritmetica sulle stringhe. */
+export function shiftIso(iso: string, days: number): string {
+  const parts = isoParts(iso);
+  if (!parts) return iso;
+  return isoFrom(parts.year, parts.month, parts.day + days);
+}
+
+/**
+ * Il mese diviso in settimane, con `null` nelle caselle prima del primo e dopo
+ * l'ultimo giorno. Si generano solo le settimane che il mese occupa davvero:
+ * una sesta riga sempre presente ruberebbe 44 px a uno schermo da 360.
+ *
+ * La settimana parte da lunedi': l'app formatta le date in `it-IT` o `en-GB`,
+ * e in entrambe la settimana comincia li'.
+ */
+export function monthWeeks(year: number, month: number): (number | null)[][] {
+  const offset = (new Date(year, month, 1).getDay() + 6) % 7;
+  const length = new Date(year, month + 1, 0).getDate();
+
+  const cells: (number | null)[] = [
+    ...Array.from<null>({ length: offset }).fill(null),
+    ...Array.from({ length }, (_, index) => index + 1),
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  return Array.from({ length: cells.length / 7 }, (_, week) => cells.slice(week * 7, week * 7 + 7));
+}
+
+/** Intestazione del calendario: "agosto 2026" / "August 2026". */
+export function formatMonth(language: Language, year: number, month: number): string {
+  return new Intl.DateTimeFormat(DATE_LOCALE[language], {
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(year, month, 1));
+}
+
+/** Le iniziali dei giorni, da lunedi': L M M G V S D — o M T W T F S S. */
+export function weekdayInitials(language: Language): string[] {
+  const format = new Intl.DateTimeFormat(DATE_LOCALE[language], { weekday: 'narrow' });
+  // 2024-01-01 e' un lunedi': serve solo a generare sette giorni di fila.
+  return Array.from({ length: 7 }, (_, index) => format.format(new Date(2024, 0, 1 + index)));
+}
+
 /** Oggi in formato ISO, nel fuso locale: e' il default del campo data. */
 export function todayIso(): string {
   const now = new Date();

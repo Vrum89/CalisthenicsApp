@@ -92,6 +92,13 @@ export const en: Record<TranslationKey, string> = {
   'stat.trend': 'Trend',
   'stat.trendSub': 'first → latest',
 
+  'date.title': 'Pick the date',
+  'date.previousMonth': 'Previous month',
+  'date.nextMonth': 'Next month',
+  'date.close': 'Close the calendar',
+  'date.today': 'Today',
+  'date.yesterday': 'Yesterday',
+
   'log.date': 'Workout date',
   'log.today': 'today',
   'log.type': 'Workout type',
