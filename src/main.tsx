@@ -6,7 +6,12 @@ import { ConfigErrorScreen } from '@/components/ConfigErrorScreen';
 import { AuthProvider } from '@/features/auth/AuthProvider';
 import { I18nProvider } from '@/lib/i18n/I18nProvider';
 import { readEnv } from '@/lib/env';
+import { guardStylesheets } from '@/lib/styleGuard';
 import '@/index.css';
+
+// Prima di tutto: se il CSS non e' arrivato, l'app va rimessa in piedi — senza
+// stile e' illeggibile, e nessuna schermata di errore si vedrebbe comunque.
+guardStylesheets();
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
