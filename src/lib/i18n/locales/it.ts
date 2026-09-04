@@ -97,6 +97,13 @@ export const it = {
   'stat.trend': 'Trend',
   'stat.trendSub': 'prima → ultima',
 
+  'date.title': 'Scegli la data',
+  'date.previousMonth': 'Mese precedente',
+  'date.nextMonth': 'Mese successivo',
+  'date.close': 'Chiudi il calendario',
+  'date.today': 'Oggi',
+  'date.yesterday': 'Ieri',
+
   'log.date': 'Data dell’allenamento',
   'log.today': 'oggi',
   'log.type': 'Tipo di allenamento',
