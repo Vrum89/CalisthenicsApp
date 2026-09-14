@@ -6,22 +6,22 @@ import type { ProgramDayWithExercises } from '@/features/programs/programsReposi
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
 /**
- * Un giorno della scheda: gli slot, in ordine, coi valori di partenza.
+ * One day of a program: its slots, in order, with their starting values.
  *
- * "Di partenza" perche' restano tutti editabili durante l'allenamento, non
- * perche' contino poco: quando ci sono, sono loro a riempire la registrazione.
- * Quello che la scheda lascia vuoto lo riempie l'ultima performance (spec §5,
- * regola della progressione). Modificare una scheda non tocca gli allenamenti
- * gia' registrati: template e istanza restano due cose separate.
+ * "Starting" because they all stay editable while training, not because they
+ * count for little: when they are there, they are what fills the log. What the
+ * program leaves empty is filled by the last performance (spec §5, progression
+ * rule). Editing a program never touches workouts already logged: template and
+ * instance stay two separate things.
  *
- * Gli slot consecutivi si possono agganciare in un superset: la scheda dice
- * "questi due si alternano a round", e il logging li apre gia' in un'unica
- * scheda a round invece che come due esercizi da fare in fila.
+ * Consecutive slots can be linked into a superset: the program says "these two
+ * alternate in rounds", and logging opens them as a single round-based card
+ * instead of two exercises to do one after the other.
  *
- * La scelta dell'esercizio e' una tendina nativa e non il picker a schermo
- * intero del logging: qui si e' fermi al tavolo sul display principale, non
- * sotto la sbarra col cover display, e una tendina raggruppata per categoria
- * costa un tocco invece di due.
+ * Picking the exercise is a native dropdown and not the full-screen picker used
+ * while logging: here you are sitting still at a table with the main display,
+ * not under the bar with the cover one, and a dropdown grouped by category
+ * costs one tap instead of two.
  */
 export function ProgramDayEditor({
   day,
@@ -40,7 +40,7 @@ export function ProgramDayEditor({
   day: ProgramDayWithExercises;
   /** Il catalogo, per la tendina e per risolvere i nomi degli slot. */
   exercises: readonly Exercise[];
-  /** Gli scheme gia' usati per ogni esercizio, i piu' recenti in testa. */
+  /** Schemes already used per exercise, most recent first. */
   schemesByExercise: ReadonlyMap<string, readonly string[]>;
   busy: boolean;
   onAddExercise: (exerciseId: string) => void;
@@ -50,7 +50,7 @@ export function ProgramDayEditor({
   ) => void;
   onMoveSlot: (slot: ProgramExercise, direction: -1 | 1) => void;
   onRemoveSlot: (slot: ProgramExercise) => void;
-  /** Aggancia lo slot a quello sopra, formando o allargando un superset. */
+  /** Links the slot to the one above, forming or widening a superset. */
   onLinkSlot: (slot: ProgramExercise) => void;
   onUnlinkSlot: (slot: ProgramExercise) => void;
   onRename: (name: string) => void;
@@ -61,7 +61,7 @@ export function ProgramDayEditor({
 
   const byId = new Map(exercises.map((exercise) => [exercise.id, exercise]));
 
-  /** Agganciato a quello sopra: stessa chiave e riga adiacente. */
+  /** Linked to the one above: same key and adjacent row. */
   function linkedToPrevious(index: number): boolean {
     const slot = day.exercises[index];
     const previous = day.exercises[index - 1];
@@ -112,8 +112,8 @@ export function ProgramDayEditor({
           {day.exercises.map((slot, index) => {
             const exercise = byId.get(slot.exerciseId);
             const linked = linkedToPrevious(index);
-            // Il bordo ambra tiene insieme visivamente il tratto: un superset
-            // si riconosce dalla colonna colorata, non leggendo le chiavi.
+            // The amber edge visually holds the run together: a superset is
+            // recognised by the coloured column, not by reading keys.
             const inSuperset = linked || linkedToPrevious(index + 1);
             const schemes = schemesByExercise.get(slot.exerciseId) ?? [];
 
@@ -197,9 +197,9 @@ export function ProgramDayEditor({
                       <span className="block text-xs text-slate-500">
                         {t('programs.defaultScheme')}
                       </span>
-                      {/* Gli scheme gia' usati per QUESTO esercizio, come nel
-                        logging: una scheda si scrive quasi sempre partendo da
-                        cio' che si sta gia' facendo. */}
+                      {/* Schemes already used for THIS exercise, as in logging:
+                        a program is almost always written starting from what
+                        you are already doing. */}
                       <input
                         type="text"
                         autoComplete="off"

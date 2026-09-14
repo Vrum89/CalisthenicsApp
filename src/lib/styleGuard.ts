@@ -1,16 +1,16 @@
 /**
- * Rete di sicurezza per il foglio di stile.
+ * Safety net for the stylesheet.
  *
- * Se la richiesta del CSS fallisce — una singhiozzata di rete al momento
- * sbagliato, o un asset non ancora propagato dopo un deploy — il browser non
- * riprova: la pagina resta a schermo senza uno stile, con i link viola e il
- * carattere con le grazie. L'app e' tecnicamente viva e completamente
- * inutilizzabile, e chi la guarda non ha modo di capire cosa e' successo.
+ * When the CSS request fails — a network hiccup at the wrong moment, or an
+ * asset not yet propagated after a deploy — the browser does not retry: the
+ * page stays up with no styling, purple links and a serif font. The app is
+ * technically alive and completely unusable, and whoever is looking at it has
+ * no way of telling what happened.
  *
- * Qui si riprova una volta a caricare gli stessi file (con una query diversa,
- * per non ripescare la risposta fallita dalla cache HTTP) e, se non basta, si
- * ricarica la pagina una volta sola. Il flag in `sessionStorage` e' quello che
- * impedisce al rimedio di diventare un ciclo di ricariche.
+ * Here the same files are requested once more (with a different query, so the
+ * failed response is not served again from the HTTP cache) and, if that is not
+ * enough, the page is reloaded exactly once. The `sessionStorage` flag is what
+ * keeps the remedy from becoming a reload loop.
  */
 
 import { detectLanguage } from '@/lib/i18n/language';
@@ -19,16 +19,16 @@ import { translate } from '@/lib/i18n/types';
 const RELOAD_FLAG = 'workout-diary:style-reload';
 
 /**
- * Un foglio che non e' arrivato.
+ * A stylesheet that never arrived.
  *
- * Guardare `link.sheet` non basta: dopo una richiesta fallita Chromium attacca
- * al link un `CSSStyleSheet` lo stesso, ma **opaco** — leggerne le regole lancia
- * `SecurityError`, come se fosse di un altro dominio. Verificato abortendo la
- * richiesta del CSS in un browser vero.
+ * Checking `link.sheet` is not enough: after a failed request Chromium still
+ * attaches a `CSSStyleSheet` to the link, but an **opaque** one — reading its
+ * rules throws `SecurityError`, as if it came from another domain. Verified by
+ * aborting the CSS request in a real browser.
  *
- * Da li' il criterio: un foglio del NOSTRO dominio, se e' arrivato, e' sempre
- * leggibile. Se lancia, o se e' vuoto, non e' arrivato. Per un foglio di
- * un'altra origine il `SecurityError` e' invece normale e non dice niente.
+ * Hence the test: a stylesheet from OUR origin, once it has arrived, is always
+ * readable. If it throws, or if it is empty, it did not arrive. For a
+ * cross-origin sheet the `SecurityError` is normal instead, and tells nothing.
  */
 function isMissing(link: HTMLLinkElement): boolean {
   const sheet = link.sheet;
@@ -66,37 +66,37 @@ function retry(link: HTMLLinkElement): Promise<boolean> {
 }
 
 /**
- * Ultima spiaggia: una copia in cache rotta, che ne' il tentativo ne' la
- * ricarica sanano.
+ * Last resort: a broken cached copy that neither the retry nor the reload can
+ * heal.
  *
- * Si butta via tutto cio' che il service worker tiene da parte e si riparte
- * pulito. E' il "disinstalla e reinstalla la PWA" senza doverlo spiegare a
- * parole: da premere, non da eseguire a mano.
+ * Everything the service worker keeps aside is thrown away and the app starts
+ * clean. It is "uninstall and reinstall the PWA" without having to explain it:
+ * a button to press, not a procedure to follow.
  */
 async function resetCaches(): Promise<void> {
   try {
     const registrations = await navigator.serviceWorker.getRegistrations();
     await Promise.all(registrations.map((registration) => registration.unregister()));
   } catch {
-    // Niente service worker (o vietato): si prosegue con le cache.
+    // No service worker (or not allowed): carry on with the caches.
   }
   try {
     const keys = await caches.keys();
     await Promise.all(keys.map((key) => caches.delete(key)));
   } catch {
-    // Cache API non disponibile: resta comunque la ricarica.
+    // Cache API unavailable: the reload still stands.
   }
   sessionStorage.removeItem(RELOAD_FLAG);
   window.location.reload();
 }
 
 /**
- * Cosa risponde davvero il server per quel file.
+ * What the server actually answers for that file.
  *
- * E' la riga che distingue le due famiglie di cause senza doverle indovinare a
- * posteriori: `200 text/html` vuol dire che il file non c'e' e qualcuno ha
- * risposto con la pagina al posto suo; un errore di rete vuol dire che non e'
- * arrivato; `200 text/css` vuol dire che il problema sta in una copia in cache.
+ * This is the line that tells the two families of causes apart instead of
+ * guessing after the fact: `200 text/html` means the file is not there and
+ * something answered with the page in its place; a network error means it never
+ * arrived; `200 text/css` means the problem is a cached copy.
  */
 async function probe(href: string): Promise<string> {
   try {
@@ -108,9 +108,9 @@ async function probe(href: string): Promise<string> {
 }
 
 /**
- * Il pannello si disegna con stili in linea, non con classi: il CSS e'
- * esattamente cio' che manca. Le stringhe passano dall'i18n come ovunque, con
- * la lingua letta a mano — React non e' ancora montato.
+ * The panel is drawn with inline styles, not classes: CSS is exactly what is
+ * missing. The strings still come from i18n as everywhere else, with the
+ * language read by hand — React has not mounted yet.
  */
 function showRecoveryPanel(detail: string): void {
   const language = detectLanguage();
@@ -138,8 +138,8 @@ function showRecoveryPanel(detail: string): void {
     void resetCaches();
   });
 
-  // La riga tecnica: serve a chi dovra' capire cosa e' successo, e sta in
-  // fondo perche' a chi si allena non dice niente.
+  // The technical line: it is for whoever has to work out what happened, and
+  // it sits at the bottom because it means nothing to someone training.
   const diagnostics = document.createElement('p');
   diagnostics.textContent = translate(language, 'style.detail', {
     detail,
@@ -154,8 +154,8 @@ function showRecoveryPanel(detail: string): void {
 export function guardStylesheets(): void {
   const { total, failed } = loadedStylesheets();
 
-  // Nessun foglio esterno (dev server: lo stile lo inietta Vite) o tutti a
-  // posto: e' il caso normale, non si tocca niente.
+  // No external sheet (dev server: Vite injects the styles) or all of them
+  // fine: the normal case, nothing to do.
   if (total === 0 || failed.length === 0) {
     sessionStorage.removeItem(RELOAD_FLAG);
     return;
@@ -164,15 +164,15 @@ export function guardStylesheets(): void {
   void Promise.all(failed.map(retry)).then((results) => {
     if (results.every(Boolean)) return;
 
-    // Il secondo tentativo e' la ricarica completa: rifa' anche l'HTML, che a
-    // questo punto potrebbe puntare a file che non esistono piu'.
+    // The second attempt is a full reload: it fetches the HTML too, which by
+    // now may be pointing at files that no longer exist.
     if (sessionStorage.getItem(RELOAD_FLAG) === null) {
       sessionStorage.setItem(RELOAD_FLAG, '1');
       window.location.reload();
       return;
     }
 
-    // Gia' ricaricato e ancora senza stile: non e' un singhiozzo di rete.
+    // Already reloaded and still unstyled: this is not a network hiccup.
     const href = failed[0]?.href;
     void (href === undefined ? Promise.resolve('?') : probe(href)).then(showRecoveryPanel);
   });

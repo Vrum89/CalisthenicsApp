@@ -1,23 +1,23 @@
 import { isLanguage, type Language } from '@/lib/i18n/types';
 
 /**
- * Scelta e memoria della lingua, fuori dal provider React.
+ * Language detection and storage, outside the React provider.
  *
- * Sta qui perche' serve anche prima che React monti: la rete di sicurezza sul
- * foglio di stile (`styleGuard`) deve poter parlare, e in quel momento non c'e'
- * nessun contesto da cui leggere la lingua.
+ * It lives here because it is needed before React mounts: the stylesheet safety
+ * net (`styleGuard`) has to be able to speak, and at that point there is no
+ * context to read the language from.
  */
 
 const STORAGE_KEY = 'workout-diary.language';
 
 /**
- * Inglese, non italiano: chi non parla nessuna delle due lingue supportate ha
- * molte piu' probabilita' di cavarsela in inglese. Un italiano viene comunque
- * riconosciuto da `navigator.languages` e non arriva mai fin qui.
+ * English, not Italian: someone who speaks neither supported language is far
+ * more likely to get by in English. An Italian speaker is recognised by
+ * `navigator.languages` anyway and never reaches this fallback.
  */
 const FALLBACK: Language = 'en';
 
-/** localStorage puo' lanciare in navigazione privata: la lingua non vale un crash. */
+/** localStorage can throw in private browsing: the language is not worth a crash. */
 export function readStoredLanguage(): Language | null {
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -31,11 +31,11 @@ export function storeLanguage(language: Language): void {
   try {
     window.localStorage.setItem(STORAGE_KEY, language);
   } catch {
-    // Scelta non persistita: vale per questa sessione e basta.
+    // Choice not persisted: it holds for this session only.
   }
 }
 
-/** Scelta esplicita → lingua del dispositivo → inglese. */
+/** Explicit choice → device language → English. */
 export function detectLanguage(): Language {
   const stored = readStoredLanguage();
   if (stored) return stored;

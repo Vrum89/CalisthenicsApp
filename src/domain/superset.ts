@@ -1,14 +1,14 @@
 /**
- * Il superset come concetto di dominio (spec §5.6).
+ * The superset as a domain concept (spec §5.6).
  *
- * Un superset non e' un'entita': e' due colonne nullable — `superset_key` e
- * `superset_order` — su righe che restano esercizi distinti. Vive in due posti,
- * la scheda (`program_exercises`) e l'allenamento registrato
- * (`workout_exercises`), e la chiave e' la stessa cosa in entrambi: per questo
- * sta qui e non dentro la bozza di logging.
+ * A superset is not an entity: it is two nullable columns — `superset_key` and
+ * `superset_order` — on rows that stay distinct exercises. It lives in two
+ * places, the program (`program_exercises`) and the logged workout
+ * (`workout_exercises`), and the key means the same thing in both: that is why
+ * it sits here and not inside the logging draft.
  */
 
-/** Righe raggruppabili: basta che sappiano dire a quale superset appartengono. */
+/** Anything groupable: it only has to say which superset it belongs to. */
 export interface SupersetMember {
   readonly supersetKey: string | null;
 }
@@ -18,13 +18,13 @@ export function newSupersetKey(): string {
 }
 
 /**
- * Il blocco contiguo di righe che formano il superset di `index`.
+ * The contiguous run of rows forming the superset at `index`.
  *
- * Contiguo di proposito: in una lista ordinata — gli slot di un giorno di
- * scheda — un superset e' un tratto, non un insieme sparso. Cosi' "aggancia al
- * precedente" e "stacca" restano operazioni locali, leggibili guardando la
- * riga sopra, senza dover cercare in fondo all'elenco chi altro condivide la
- * chiave. Una riga senza chiave e' un blocco di uno.
+ * Contiguous on purpose: in an ordered list — the slots of a program day — a
+ * superset is a stretch, not a scattered set. That keeps "link to the previous
+ * one" and "unlink" local operations, readable by looking at the row above,
+ * without hunting the bottom of the list for whoever else shares the key. A row
+ * without a key is a run of one.
  */
 export function supersetRun<T extends SupersetMember>(
   members: readonly T[],
@@ -44,18 +44,18 @@ export function supersetRun<T extends SupersetMember>(
 }
 
 export interface SupersetGroup<T> {
-  /** `null` per un esercizio da solo. */
+  /** `null` for an exercise on its own. */
   readonly supersetKey: string | null;
   readonly members: readonly T[];
 }
 
 /**
- * Raggruppa per superset mantenendo l'ordine: un gruppo sta dove sta il suo
- * primo membro, e chi condivide la chiave lo raggiunge li'.
+ * Groups by superset while keeping the order: a group sits where its first
+ * member sits, and whoever shares the key joins it there.
  *
- * Generica sul tipo perche' serve identica su due forme diverse: le voci di una
- * bozza in corso e le righe gia' salvate che si rileggono nel diario. `keyOf`
- * dice dove trovare la chiave quando non e' sull'oggetto stesso.
+ * Generic because the same grouping is needed on two different shapes: the
+ * entries of a draft being logged, and the saved rows read back in the diary.
+ * `keyOf` says where to find the key when it is not on the object itself.
  */
 export function groupBySuperset<T>(
   members: readonly T[],
@@ -90,26 +90,23 @@ export interface SupersetAssignment {
 }
 
 /**
- * Rimette in ordine le chiavi di una lista dopo un aggancio, uno sgancio, uno
- * spostamento o una cancellazione.
+ * Puts the keys of a list back in order after a link, an unlink, a move or a
+ * deletion.
  *
- * Due regole sole, applicate tratto per tratto:
- * - un superset di uno non e' un superset, la chiave si toglie;
- * - una chiave che ricompare piu' avanti, staccata dal suo tratto, e' un altro
- *   superset e prende una chiave nuova. Succede spostando un esercizio in mezzo
- *   a una coppia agganciata: senza questa regola resterebbero legati "a
- *   distanza", visibili come superset nel logging ma non nella scheda.
+ * Two rules only, applied run by run:
+ * - a superset of one is not a superset, so the key is dropped;
+ * - a key that reappears further down, detached from its run, is a different
+ *   superset and gets a fresh key. That happens when a slot is moved between a
+ *   linked pair: without this rule the two would stay linked "at a distance",
+ *   showing as a superset while logging but not in the program.
  *
- * Normalizzare tutto dopo ogni modifica costa qualche `update` in piu' e toglie
- * di mezzo una classe intera di stati incoerenti.
+ * Normalising everything after each change costs a few extra updates and
+ * removes an entire class of inconsistent states.
  */
 export function normalizeSupersets<T extends SupersetMember>(
   members: readonly T[],
 ): SupersetAssignment[] {
-  const detached: SupersetAssignment = {
-    supersetKey: null,
-    supersetOrder: null,
-  };
+  const detached: SupersetAssignment = { supersetKey: null, supersetOrder: null };
   const assignments: SupersetAssignment[] = [];
   const seen = new Set<string>();
 

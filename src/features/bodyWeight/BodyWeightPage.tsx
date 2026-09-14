@@ -167,9 +167,9 @@ export function BodyWeightPage() {
               >
                 {t('bodyWeight.date')}
               </label>
-              {/* Il calendario e' il nostro, non quello di sistema: anche una
-                  pesata si segna volentieri dal cover display, dove il dialog
-                  di Android si taglia (vedi `DatePicker`). */}
+              {/* The calendar is ours, not the system one: a weigh-in is happily
+                  logged from the cover display too, where Android's dialog gets
+                  cut off (see `DatePicker`). */}
               <button
                 id="measuredOn"
                 type="button"

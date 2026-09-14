@@ -51,17 +51,17 @@ export function ProgramsPage() {
   const { user } = useAuth();
   const programs = usePrograms();
   const exercises = useExercises();
-  // Lo storico serve solo a suggerire gli scheme gia' usati: scrivere una
-  // scheda vuol dire quasi sempre ripartire da cio' che si sta gia' facendo.
+  // The history is only used to suggest schemes already in use: writing a
+  // program almost always means starting from what you are already doing.
   const history = useWorkoutHistory();
   const schemesByExercise = knownSchemes(history.data);
 
   const [openId, setOpenId] = useState<string | null>(null);
   /**
-   * La data che si sta scegliendo, se c'e'. Il calendario e' il nostro anche
-   * qui: il campo `date` di sistema, su un browser da scrivania, si apre solo
-   * cliccando la sua iconcina — sul telefono basta toccarlo, e la differenza
-   * fra le due superfici non e' spiegabile a chi la usa.
+   * The date being picked, if any. The calendar is ours here too: the system
+   * `date` field, on a desktop browser, only opens when its little icon is
+   * clicked — on a phone a tap anywhere does it, and that difference between
+   * the two surfaces cannot be explained to whoever is using it.
    */
   const [pickingDate, setPickingDate] = useState<{
     programId: string;
@@ -108,16 +108,16 @@ export function ProgramsPage() {
   }
 
   /**
-   * Scrive a database un nuovo ordine di slot.
+   * Writes a new slot order to the database.
    *
-   * L'ordine e i superset stanno nella stessa operazione perche' sono la stessa
-   * cosa: un superset e' un tratto contiguo, e spostare una riga puo' spezzarlo.
-   * `normalizeSupersets` decide le chiavi finali, qui si scrivono solo le righe
-   * che cambiano davvero — `sortOrder` diventa 0..n-1, cosi' un giorno con
-   * buchi si ricompatta da solo.
+   * Order and supersets travel in the same operation because they are the same
+   * thing: a superset is a contiguous run, and moving a row can break it.
+   * `normalizeSupersets` decides the final keys; only the rows that really
+   * change are written — `sortOrder` becomes 0..n-1, so a day with gaps
+   * compacts itself.
    */
   async function writeSlots(
-    /** Le righe come stanno a database: il metro per capire cosa e' cambiato. */
+    /** The rows as they stand in the database: the yardstick for what changed. */
     saved: readonly ProgramExercise[],
     next: readonly ProgramExercise[],
   ) {
@@ -151,8 +151,8 @@ export function ProgramsPage() {
   }
 
   /**
-   * Toglie uno slot e rimette in ordine quelli che restano: senza, cancellare
-   * meta' di un superset lascerebbe l'altra meta' agganciata a nessuno.
+   * Removes a slot and reorders what is left: without this, deleting half a
+   * superset would leave the other half linked to nobody.
    */
   function removeSlot(slots: readonly ProgramExercise[], slot: ProgramExercise) {
     const rest = slots.filter((candidate) => candidate.id !== slot.id);
@@ -174,10 +174,10 @@ export function ProgramsPage() {
   }
 
   /**
-   * Aggancia uno slot a quello sopra: nasce un superset, o si allarga quello
-   * che c'e' gia'. Si agganciano i due TRATTI interi, non le due righe: se
-   * sopra c'era gia' una coppia, il terzo entra nello stesso giro invece di
-   * spezzarla in due superset.
+   * Links a slot to the one above: a superset is born, or the existing one
+   * grows. The two whole RUNS are linked, not the two rows: if there was
+   * already a pair above, the third joins the same round instead of splitting
+   * it into two supersets.
    */
   function linkSlot(slots: readonly ProgramExercise[], slot: ProgramExercise) {
     const index = slots.findIndex((candidate) => candidate.id === slot.id);
@@ -197,9 +197,9 @@ export function ProgramsPage() {
   }
 
   /**
-   * Stacca uno slot da quello sopra. Il tratto si divide in due: cio' che resta
-   * sopra tiene la chiave, da qui in giu' se ne prende una nuova — e se una
-   * delle due parti resta da sola, `normalizeSupersets` le toglie la chiave.
+   * Unlinks a slot from the one above. The run splits in two: what stays above
+   * keeps the key, from here down takes a fresh one — and if either part is
+   * left alone, `normalizeSupersets` drops its key.
    */
   function unlinkSlot(slots: readonly ProgramExercise[], slot: ProgramExercise) {
     const index = slots.findIndex((candidate) => candidate.id === slot.id);
@@ -428,8 +428,8 @@ export function ProgramsPage() {
       </header>
 
       <main className="flex-1 space-y-4 pb-8">
-        {/* Solo al primo caricamento: durante un ricarico l'elenco resta a
-            schermo, e la riga "carico" farebbe saltare il layout ogni volta. */}
+        {/* First load only: during a reload the list stays on screen, and a
+            "loading" line would make the layout jump every time. */}
         {programs.status === 'loading' && programs.data.length === 0 && (
           <p className="flex items-center gap-2 text-sm text-slate-400">
             <LoaderCircle aria-hidden className="size-4 animate-spin" />
@@ -476,7 +476,7 @@ export function ProgramsPage() {
             }}
             {...(pickingDate.field === 'end'
               ? {
-                  // Una scheda senza fine e' semplicemente ancora in corso.
+                  // A program with no end date is simply still ongoing.
                   onClear: () => {
                     const target = pickingDate;
                     setPickingDate(null);

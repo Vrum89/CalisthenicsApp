@@ -73,6 +73,13 @@ export const it = {
   'diary.jump': 'Vai a una data',
   'diary.openProgress': 'Apri i progressi di questo esercizio →',
   'diary.deleteConfirm': 'Cancellare «{name}» da questo allenamento? Non si può annullare.',
+  'diary.edit': 'Correggi',
+  'diary.editSave': 'Salva la correzione',
+  'diary.editCancel': 'Annulla',
+  'diary.addExercise': 'Aggiungi un esercizio a questo allenamento',
+  'diary.deleteWorkout': 'Elimina tutto l’allenamento',
+  'diary.deleteWorkoutOne': 'Eliminare l’allenamento del {date} con il suo unico esercizio? Non si può annullare.',
+  'diary.deleteWorkoutConfirm': 'Eliminare l’allenamento del {date} con tutti i suoi {count} esercizi? Non si può annullare.',
 
   'dashboard.title': 'Progressi',
   'dashboard.exercise': 'Esercizio',

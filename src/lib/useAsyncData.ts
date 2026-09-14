@@ -31,12 +31,12 @@ export function useAsyncData<T>(load: () => Promise<T>, empty: T): AsyncData<T> 
   const [reloadToken, setReloadToken] = useState(0);
 
   /**
-   * Ricarica tenendo a schermo i dati che ci sono gia'.
+   * Reloads while keeping on screen the data already there.
    *
-   * Svuotarli avrebbe voluto dire, a ogni modifica di una scheda, veder sparire
-   * e ricomparire l'elenco: un lampo bianco che si legge come "si e' resettato
-   * qualcosa". I dati vecchi sono corretti fino a prova contraria — la prova
-   * arriva un istante dopo, dalla risposta.
+   * Clearing it meant, on every edit to a program, watching the list vanish and
+   * come back: a white flash that reads as "something got reset". The old data
+   * is correct until proven otherwise — and the proof arrives an instant later,
+   * with the response.
    */
   const reload = useCallback(() => {
     setState((current) => ({ status: 'loading', data: current.data, error: null }));

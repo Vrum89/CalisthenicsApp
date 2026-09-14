@@ -1,12 +1,19 @@
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { toAppError } from '@/lib/supabase/errors';
-import { fromWorkout, fromWorkoutExercise, toWorkout } from '@/lib/supabase/mappers';
-import type { Workout } from '@/domain/types';
+import {
+  fromWorkout,
+  fromWorkoutExercise,
+  toWorkout,
+  toWorkoutExercise,
+  type NewWorkoutExercise,
+} from '@/lib/supabase/mappers';
+import type { Workout, WorkoutExercise } from '@/domain/types';
 import {
   doneReps,
   entryScheme,
   entryValue,
   filledEntries,
+  type DraftEntry,
   type WorkoutDraft,
 } from '@/features/logging/draft';
 
@@ -109,4 +116,90 @@ export async function deleteWorkoutEntry(entryId: string, workoutId: string): Pr
     const { error: workoutError } = await supabase.from('workouts').delete().eq('id', workoutId);
     if (workoutError) throw toAppError(workoutError, 'error.workout.deleteEntry');
   }
+}
+
+/**
+ * The values of one logged entry that can be corrected afterwards.
+ *
+ * Only what was typed while training: the exercise, the workout it belongs to
+ * and its position are not a correction, they are another row. `metricValue`
+ * travels with `repsPerSet` because the two must agree — the registry derives
+ * it, the caller never invents it (spec §4).
+ */
+export interface WorkoutEntryChanges {
+  readonly scheme: string | null;
+  readonly repsPerSet: number[] | null;
+  readonly metricValue: number | null;
+  readonly addedWeightKg: number | null;
+  readonly variant: string | null;
+  readonly notes: string | null;
+}
+
+/** Reads out of a draft exactly what a saved row stores. */
+export function changesFromDraft(draft: DraftEntry): WorkoutEntryChanges {
+  const reps = doneReps(draft);
+  return {
+    scheme: entryScheme(draft),
+    repsPerSet: reps.length > 0 ? reps : null,
+    metricValue: entryValue(draft),
+    addedWeightKg: draft.addedWeightKg,
+    variant: draft.variant.trim().length > 0 ? draft.variant.trim() : null,
+    notes: draft.notes.trim().length > 0 ? draft.notes.trim() : null,
+  };
+}
+
+/**
+ * Corrects an entry already saved.
+ *
+ * The diary is where a wrong number is noticed, so it is where it has to be
+ * fixable: before this, the only way was the Supabase dashboard — an answer
+ * that works for whoever built the app, not for whoever trains with it.
+ */
+export async function updateWorkoutEntry(
+  entryId: string,
+  changes: WorkoutEntryChanges,
+): Promise<void> {
+  const { error } = await getSupabaseClient()
+    .from('workout_exercises')
+    .update({
+      scheme: changes.scheme,
+      reps_per_set: changes.repsPerSet,
+      metric_value: changes.metricValue,
+      added_weight_kg: changes.addedWeightKg,
+      variant: changes.variant,
+      notes: changes.notes,
+    })
+    .eq('id', entryId);
+
+  if (error) throw toAppError(error, 'error.workout.save');
+}
+
+/**
+ * Adds an exercise to a workout already saved — the one forgotten on the day.
+ *
+ * It goes last: `sortOrder` is the order of execution, and something remembered
+ * afterwards was, at best, done at the end. Never part of a superset: linking
+ * is a decision taken while training, not while correcting.
+ */
+export async function addWorkoutEntry(entry: NewWorkoutExercise): Promise<WorkoutExercise> {
+  const { data, error } = await getSupabaseClient()
+    .from('workout_exercises')
+    .insert(fromWorkoutExercise(entry))
+    .select()
+    .single();
+
+  if (error) throw toAppError(error, 'error.workout.save');
+  return toWorkoutExercise(data);
+}
+
+/**
+ * Deletes a whole workout, entries included (the database cascades).
+ *
+ * It is a shortcut, not a new power: the same thing can be done by removing the
+ * entries one by one. It exists for the double save and the test session, where
+ * five swipes are five chances to delete the wrong row.
+ */
+export async function deleteWorkout(workoutId: string): Promise<void> {
+  const { error } = await getSupabaseClient().from('workouts').delete().eq('id', workoutId);
+  if (error) throw toAppError(error, 'error.workout.deleteEntry');
 }

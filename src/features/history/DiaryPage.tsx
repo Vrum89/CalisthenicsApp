@@ -6,33 +6,41 @@ import { DatePicker } from '@/components/DatePicker';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { buildDiary, nonEmptySessions, sessionNearest, type DiarySession } from '@/domain/diary';
 import type { Workout } from '@/domain/types';
+import { useAuth } from '@/features/auth/useAuth';
 import { useExercises } from '@/features/exercises/useExercises';
 import { DiarySessionCard } from '@/features/history/DiarySessionCard';
 import { useWorkoutHistory } from '@/features/history/useWorkoutHistory';
-import { deleteWorkoutEntry } from '@/features/logging/workoutRepository';
+import { knownSchemes, knownVariants, lastPerformances } from '@/features/logging/lastPerformance';
+import {
+  addWorkoutEntry,
+  deleteWorkout,
+  deleteWorkoutEntry,
+  updateWorkoutEntry,
+} from '@/features/logging/workoutRepository';
 import { usePrograms } from '@/features/programs/usePrograms';
 import { formatDate, todayIso } from '@/lib/dates';
 import { describeError } from '@/lib/errors';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
-/** Ancora DOM di una giornata: serve al salto per data. */
+/** DOM anchor for a day: used by the jump-to-date. */
 function sessionAnchor(workout: Workout): string {
   return `session-${workout.id}`;
 }
 
 /**
- * Il diario: gli allenamenti per data (l'altra lettura dei Progressi).
+ * The diary: workouts by date (the other way of reading Progress).
  *
- * I Progressi rispondono a "come sto andando nelle trazioni", questo a "cosa ho
- * fatto martedi'". Stessi dati, gia' in memoria: qui non c'e' nessuna query in
- * piu', solo un raggruppamento diverso (`domain/diary.ts`).
+ * Progress answers "how are my pull-ups going", this one "what did I do on
+ * Tuesday". Same data, already in memory: there is no extra query here, only a
+ * different grouping (`domain/diary.ts`).
  *
- * E' consultazione, quindi vive sul display principale (spec §2.5) — ma resta a
- * colonna singola e regge i 360 px come il resto dell'app: una sessione si
- * legge anche dal cover, se capita.
+ * It is for reading, so it belongs on the main display (spec §2.5) — but it
+ * stays single-column and holds up at 360 px like the rest of the app: a
+ * session can be read from the cover too, if it comes to that.
  */
 export function DiaryPage() {
   const { t, language } = useTranslation();
+  const { user } = useAuth();
   const history = useWorkoutHistory();
   const exercises = useExercises();
   const programs = usePrograms();
@@ -42,11 +50,17 @@ export function DiaryPage() {
   const [error, setError] = useState<unknown>(null);
 
   const exercisesById = new Map(exercises.data.map((exercise) => [exercise.id, exercise]));
+  // The same suggestions offered while logging: a correction typed here must be
+  // able to reuse a condition or a scheme already in the history, or it would
+  // quietly create a second spelling of the same thing.
+  const performances = lastPerformances(history.data);
+  const variantsByExercise = knownVariants(history.data);
+  const schemesByExercise = knownSchemes(history.data);
   const sessions = nonEmptySessions(
     buildDiary(history.data.workouts, history.data.entries, exercisesById),
   );
 
-  /** Il nome del giorno di scheda ("Autunno 2026 · A"), se l'allenamento ne aveva uno. */
+  /** The program day name ("Autunno 2026 · A"), when the workout came from one. */
   const dayNames = new Map<string, string>();
   for (const detail of programs.data) {
     for (const day of detail.days) {
@@ -54,7 +68,7 @@ export function DiaryPage() {
     }
   }
 
-  /** Primo caricamento: dopo, i dati vecchi restano a schermo mentre si ricarica. */
+  /** First load only: afterwards the old data stays on screen while reloading. */
   const loading =
     (history.status === 'loading' && history.data.workouts.length === 0) ||
     (exercises.status === 'loading' && exercises.data.length === 0);
@@ -64,16 +78,27 @@ export function DiaryPage() {
     const target = sessionNearest(sessions, iso);
     if (!target) return;
 
-    // Si apre anche il dettaglio: chi salta a una data ci va per leggerla.
+    // The detail opens too: whoever jumps to a date goes there to read it.
     setOpenId(target.workout.id);
     const element = document.getElementById(sessionAnchor(target.workout));
     const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     element?.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' });
   }
 
-  async function handleDelete(entryId: string, workoutId: string) {
-    await deleteWorkoutEntry(entryId, workoutId);
-    history.reload();
+  /**
+   * Every write reloads the history: the diary, the charts and the "last
+   * performance" of the logging screen read the same rows, and a correction
+   * that stays only on screen would be a lie the next time they are opened.
+   */
+  async function run(action: () => Promise<unknown>) {
+    setError(null);
+    try {
+      await action();
+      history.reload();
+    } catch (cause) {
+      setError(cause);
+      throw cause;
+    }
   }
 
   return (
@@ -156,13 +181,40 @@ export function DiaryPage() {
                     onToggle={() => {
                       setOpenId(openId === session.workout.id ? null : session.workout.id);
                     }}
-                    onDelete={async (entryId) => {
-                      setError(null);
-                      try {
-                        await handleDelete(entryId, session.workout.id);
-                      } catch (cause) {
-                        setError(cause);
-                      }
+                    catalog={exercisesById}
+                    exercises={exercises.data}
+                    performances={performances}
+                    variantsByExercise={variantsByExercise}
+                    schemesByExercise={schemesByExercise}
+                    onUpdateEntry={async (entryId, changes) => {
+                      await run(() => updateWorkoutEntry(entryId, changes));
+                    }}
+                    onAddEntry={async (exercise, changes) => {
+                      if (!user) return;
+                      await run(() =>
+                        addWorkoutEntry({
+                          ...changes,
+                          userId: user.id,
+                          workoutId: session.workout.id,
+                          exerciseId: exercise.id,
+                          // Last in the order of execution: something remembered
+                          // afterwards was, at best, done at the end.
+                          sortOrder: session.groups.reduce(
+                            (count, group) => count + group.items.length,
+                            0,
+                          ),
+                          isExcluded: false,
+                          exclusionReason: null,
+                          supersetKey: null,
+                          supersetOrder: null,
+                        }),
+                      );
+                    }}
+                    onDeleteEntry={async (entryId) => {
+                      await run(() => deleteWorkoutEntry(entryId, session.workout.id));
+                    }}
+                    onDeleteWorkout={async () => {
+                      await run(() => deleteWorkout(session.workout.id));
                     }}
                   />
                 </li>
