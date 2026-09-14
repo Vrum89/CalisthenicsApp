@@ -31,6 +31,7 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 export function ExerciseCard({
   entry,
   last,
+  caption,
   variants,
   schemes,
   onChange,
@@ -40,12 +41,20 @@ export function ExerciseCard({
 }: {
   entry: DraftEntry;
   last: LastPerformance | null;
+  /**
+   * Replaces the "last time" line when it would be misleading. The diary reuses
+   * this card to correct an entry already logged (spec §6.1), and there the
+   * useful context is the day being corrected, not the most recent session.
+   */
+  caption?: string;
   /** Condizioni gia' usate per questo esercizio, da proporre nel campo. */
   variants: readonly string[];
   /** Scheme gia' usati per questo esercizio, da proporre nel campo. */
   schemes: readonly string[];
   onChange: (change: (entry: DraftEntry) => DraftEntry) => void;
-  onRemove: () => void;
+  /** Absent where removing makes no sense: the diary editor corrects a row,
+   *  and dropping it has its own gesture and its own confirmation. */
+  onRemove?: () => void;
   onSetCompleted: () => void;
   onStartWindow: (seconds: number) => void;
 }) {
@@ -64,22 +73,25 @@ export function ExerciseCard({
             {entry.name}
           </h2>
           <p className="truncate text-xs text-slate-500">
-            {last
-              ? t('log.last', {
-                  summary: describePerformance(t, entry.metricType, last.entry),
-                  date: formatCompactDate(language, last.date),
-                })
-              : t('log.noLast')}
+            {caption ??
+              (last
+                ? t('log.last', {
+                    summary: describePerformance(t, entry.metricType, last.entry),
+                    date: formatCompactDate(language, last.date),
+                  })
+                : t('log.noLast'))}
           </p>
         </div>
-        <button
-          type="button"
-          aria-label={t('log.remove')}
-          onClick={onRemove}
-          className="tap-target -mt-1 -mr-1 flex shrink-0 items-center justify-center rounded-lg text-slate-500 hover:text-red-400"
-        >
-          <Trash2 aria-hidden className="size-5" />
-        </button>
+        {onRemove && (
+          <button
+            type="button"
+            aria-label={t('log.remove')}
+            onClick={onRemove}
+            className="tap-target -mt-1 -mr-1 flex shrink-0 items-center justify-center rounded-lg text-slate-500 hover:text-red-400"
+          >
+            <Trash2 aria-hidden className="size-5" />
+          </button>
+        )}
       </header>
 
       {inputKind === 'set-checkboxes' && (

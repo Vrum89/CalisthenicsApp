@@ -146,6 +146,33 @@ export function draftEntryFor(
   };
 }
 
+/**
+ * A saved entry brought back into a draft, so it can be corrected with the very
+ * same widgets used to log it (spec §6.1).
+ *
+ * Every set comes back ticked: they were done, that is why they are in the
+ * history. An added set starts unticked like any other, and stays out of the
+ * saved values until it is ticked — the rule is the same as while training,
+ * which is the point of reusing the widgets rather than building a second way
+ * of typing the same data.
+ */
+export function draftEntryFromSaved(entry: WorkoutExercise, exercise: Exercise): DraftEntry {
+  return {
+    id: entry.id,
+    exerciseId: entry.exerciseId,
+    name: exercise.name,
+    metricType: exercise.metricType,
+    windowSeconds: exercise.windowSeconds,
+    scheme: entry.scheme ?? '',
+    sets: (entry.repsPerSet ?? []).map((reps) => ({ reps, done: true })),
+    value: entry.metricValue,
+    addedWeightKg: entry.addedWeightKg,
+    variant: entry.variant ?? '',
+    notes: entry.notes ?? '',
+    supersetKey: entry.supersetKey,
+  };
+}
+
 // --- Superset ---------------------------------------------------------------
 
 /**

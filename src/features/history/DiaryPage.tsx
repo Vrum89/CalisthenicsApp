@@ -6,10 +6,17 @@ import { DatePicker } from '@/components/DatePicker';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { buildDiary, nonEmptySessions, sessionNearest, type DiarySession } from '@/domain/diary';
 import type { Workout } from '@/domain/types';
+import { useAuth } from '@/features/auth/useAuth';
 import { useExercises } from '@/features/exercises/useExercises';
 import { DiarySessionCard } from '@/features/history/DiarySessionCard';
 import { useWorkoutHistory } from '@/features/history/useWorkoutHistory';
-import { deleteWorkoutEntry } from '@/features/logging/workoutRepository';
+import { knownSchemes, knownVariants, lastPerformances } from '@/features/logging/lastPerformance';
+import {
+  addWorkoutEntry,
+  deleteWorkout,
+  deleteWorkoutEntry,
+  updateWorkoutEntry,
+} from '@/features/logging/workoutRepository';
 import { usePrograms } from '@/features/programs/usePrograms';
 import { formatDate, todayIso } from '@/lib/dates';
 import { describeError } from '@/lib/errors';
@@ -33,6 +40,7 @@ function sessionAnchor(workout: Workout): string {
  */
 export function DiaryPage() {
   const { t, language } = useTranslation();
+  const { user } = useAuth();
   const history = useWorkoutHistory();
   const exercises = useExercises();
   const programs = usePrograms();
@@ -42,6 +50,12 @@ export function DiaryPage() {
   const [error, setError] = useState<unknown>(null);
 
   const exercisesById = new Map(exercises.data.map((exercise) => [exercise.id, exercise]));
+  // The same suggestions offered while logging: a correction typed here must be
+  // able to reuse a condition or a scheme already in the history, or it would
+  // quietly create a second spelling of the same thing.
+  const performances = lastPerformances(history.data);
+  const variantsByExercise = knownVariants(history.data);
+  const schemesByExercise = knownSchemes(history.data);
   const sessions = nonEmptySessions(
     buildDiary(history.data.workouts, history.data.entries, exercisesById),
   );
@@ -71,9 +85,20 @@ export function DiaryPage() {
     element?.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' });
   }
 
-  async function handleDelete(entryId: string, workoutId: string) {
-    await deleteWorkoutEntry(entryId, workoutId);
-    history.reload();
+  /**
+   * Every write reloads the history: the diary, the charts and the "last
+   * performance" of the logging screen read the same rows, and a correction
+   * that stays only on screen would be a lie the next time they are opened.
+   */
+  async function run(action: () => Promise<unknown>) {
+    setError(null);
+    try {
+      await action();
+      history.reload();
+    } catch (cause) {
+      setError(cause);
+      throw cause;
+    }
   }
 
   return (
@@ -156,13 +181,40 @@ export function DiaryPage() {
                     onToggle={() => {
                       setOpenId(openId === session.workout.id ? null : session.workout.id);
                     }}
-                    onDelete={async (entryId) => {
-                      setError(null);
-                      try {
-                        await handleDelete(entryId, session.workout.id);
-                      } catch (cause) {
-                        setError(cause);
-                      }
+                    catalog={exercisesById}
+                    exercises={exercises.data}
+                    performances={performances}
+                    variantsByExercise={variantsByExercise}
+                    schemesByExercise={schemesByExercise}
+                    onUpdateEntry={async (entryId, changes) => {
+                      await run(() => updateWorkoutEntry(entryId, changes));
+                    }}
+                    onAddEntry={async (exercise, changes) => {
+                      if (!user) return;
+                      await run(() =>
+                        addWorkoutEntry({
+                          ...changes,
+                          userId: user.id,
+                          workoutId: session.workout.id,
+                          exerciseId: exercise.id,
+                          // Last in the order of execution: something remembered
+                          // afterwards was, at best, done at the end.
+                          sortOrder: session.groups.reduce(
+                            (count, group) => count + group.items.length,
+                            0,
+                          ),
+                          isExcluded: false,
+                          exclusionReason: null,
+                          supersetKey: null,
+                          supersetOrder: null,
+                        }),
+                      );
+                    }}
+                    onDeleteEntry={async (entryId) => {
+                      await run(() => deleteWorkoutEntry(entryId, session.workout.id));
+                    }}
+                    onDeleteWorkout={async () => {
+                      await run(() => deleteWorkout(session.workout.id));
                     }}
                   />
                 </li>
