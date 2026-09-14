@@ -13,17 +13,17 @@ import {
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
 /**
- * Il calendario dell'app, al posto di quello di sistema.
+ * The app's own calendar, in place of the system one.
  *
- * Motivo: sul cover display del Razr 50 (~360x360) il dialog nativo di Android
- * cambia impaginazione — intestazione a sinistra, come se fosse un telefono in
- * orizzontale — e la griglia del mese resta alta due righe, tagliata in basso e
- * senza scorrimento. Dal 15 in poi il mese non e' raggiungibile. Quel dialog lo
- * disegna il browser fuori dalla pagina: nessun CSS, attributo o viewport
- * nostro puo' rimpicciolirlo, quindi l'unica via e' non usarlo.
+ * Why: on the Razr 50 cover display (~360x360) Android's native dialog switches
+ * layout — header on the left, as if the phone were held sideways — and the
+ * month grid is left two rows tall, cut off at the bottom and unscrollable.
+ * From the 15th onwards the month is unreachable. That dialog is drawn by the
+ * browser outside the page: no CSS, attribute or viewport of ours can shrink
+ * it, so the only way out is not to use it.
  *
- * Qui invece le settimane sono solo quelle che il mese occupa, il pannello
- * scorre se non ci sta, e le caselle restano da 44 px come tutto il resto.
+ * Here instead only the weeks the month spans are drawn, the panel scrolls when
+ * it does not fit, and the cells stay 44 px like everything else.
  */
 export function DatePicker({
   value,
@@ -33,10 +33,10 @@ export function DatePicker({
   onClose,
 }: {
   value: string;
-  /** Ultima data scegliibile, ISO. Un allenamento non si registra in anticipo. */
+  /** Last selectable date, ISO. A workout is never logged in advance. */
   max?: string;
   onPick: (iso: string) => void;
-  /** Se c'e', la data si puo' anche togliere: una scheda senza fine e' aperta. */
+  /** When present, the date can also be cleared: a program with no end is open. */
   onClear?: () => void;
   onClose: () => void;
 }) {
@@ -44,7 +44,7 @@ export function DatePicker({
   const today = todayIso();
   const selected = isoParts(value) ?? isoParts(today);
 
-  // Il mese mostrato: si parte da quello della data scelta e si sfoglia.
+  // The month on screen: it starts from the selected date and is paged from there.
   const [cursor, setCursor] = useState(() => ({
     year: selected?.year ?? new Date().getFullYear(),
     month: selected?.month ?? new Date().getMonth(),
@@ -73,15 +73,15 @@ export function DatePicker({
       role="dialog"
       aria-modal="true"
       aria-label={t('date.title')}
-      /* `h-dvh` e non `inset-0`: su Android l'altezza del viewport cambia con
-         la barra di sistema, e un pannello alto quanto la finestra "teorica"
-         finisce sotto quella barra — il fondo si vede tagliato. L'unita'
-         dinamica misura lo spazio che c'e' davvero, adesso. */
+      /* `h-dvh` rather than `inset-0`: on Android the viewport height changes
+         with the system bar, and a panel as tall as the "theoretical" window
+         ends up underneath it — the bottom looks cut off. The dynamic unit
+         measures the space that is actually there, right now. */
       className="px-safe pt-safe pb-safe fixed top-0 left-0 z-40 flex h-dvh w-full justify-center bg-slate-950"
     >
-      {/* Tre fasce: intestazione e scorciatoie restano sempre a schermo, e a
-          cedere e' solo la griglia, che scorre. Su 360x360 e' cio' che tiene i
-          pulsanti raggiungibili anche quando il mese occupa sei settimane. */}
+      {/* Three bands: header and shortcuts always stay on screen, and the only
+          one to give way is the grid, which scrolls. On 360x360 that is what
+          keeps the buttons reachable even when the month spans six weeks. */}
       <div className="flex h-full w-full max-w-md flex-col px-3 py-2">
         <header className="flex shrink-0 items-center gap-1">
           <button
@@ -128,8 +128,8 @@ export function DatePicker({
           ))}
         </div>
 
-        {/* `min-h-0` insieme a `flex-1`: senza, un figlio flex non si lascia
-            rimpicciolire sotto il proprio contenuto e lo scroll non parte. */}
+        {/* `min-h-0` together with `flex-1`: without it a flex child refuses to
+            shrink below its content, and the scrolling never starts. */}
         <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-7 gap-0.5 overflow-y-auto">
           {weeks.flat().map((day, index) => {
             if (day === null) return <span key={index} />;
@@ -163,8 +163,8 @@ export function DatePicker({
           })}
         </div>
 
-        {/* Le due scelte che coprono quasi tutti i casi: si registra l'allenamento
-            appena fatto, o quello di ieri sera che ci si e' dimenticati. */}
+        {/* The two choices covering almost every case: logging the workout just
+            finished, or last night's one you forgot about. */}
         <div className="flex shrink-0 gap-2 pt-2">
           <button
             type="button"

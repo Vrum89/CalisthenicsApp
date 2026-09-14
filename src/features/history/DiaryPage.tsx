@@ -15,21 +15,21 @@ import { formatDate, todayIso } from '@/lib/dates';
 import { describeError } from '@/lib/errors';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
-/** Ancora DOM di una giornata: serve al salto per data. */
+/** DOM anchor for a day: used by the jump-to-date. */
 function sessionAnchor(workout: Workout): string {
   return `session-${workout.id}`;
 }
 
 /**
- * Il diario: gli allenamenti per data (l'altra lettura dei Progressi).
+ * The diary: workouts by date (the other way of reading Progress).
  *
- * I Progressi rispondono a "come sto andando nelle trazioni", questo a "cosa ho
- * fatto martedi'". Stessi dati, gia' in memoria: qui non c'e' nessuna query in
- * piu', solo un raggruppamento diverso (`domain/diary.ts`).
+ * Progress answers "how are my pull-ups going", this one "what did I do on
+ * Tuesday". Same data, already in memory: there is no extra query here, only a
+ * different grouping (`domain/diary.ts`).
  *
- * E' consultazione, quindi vive sul display principale (spec §2.5) — ma resta a
- * colonna singola e regge i 360 px come il resto dell'app: una sessione si
- * legge anche dal cover, se capita.
+ * It is for reading, so it belongs on the main display (spec §2.5) — but it
+ * stays single-column and holds up at 360 px like the rest of the app: a
+ * session can be read from the cover too, if it comes to that.
  */
 export function DiaryPage() {
   const { t, language } = useTranslation();
@@ -46,7 +46,7 @@ export function DiaryPage() {
     buildDiary(history.data.workouts, history.data.entries, exercisesById),
   );
 
-  /** Il nome del giorno di scheda ("Autunno 2026 · A"), se l'allenamento ne aveva uno. */
+  /** The program day name ("Autunno 2026 · A"), when the workout came from one. */
   const dayNames = new Map<string, string>();
   for (const detail of programs.data) {
     for (const day of detail.days) {
@@ -54,7 +54,7 @@ export function DiaryPage() {
     }
   }
 
-  /** Primo caricamento: dopo, i dati vecchi restano a schermo mentre si ricarica. */
+  /** First load only: afterwards the old data stays on screen while reloading. */
   const loading =
     (history.status === 'loading' && history.data.workouts.length === 0) ||
     (exercises.status === 'loading' && exercises.data.length === 0);
@@ -64,7 +64,7 @@ export function DiaryPage() {
     const target = sessionNearest(sessions, iso);
     if (!target) return;
 
-    // Si apre anche il dettaglio: chi salta a una data ci va per leggerla.
+    // The detail opens too: whoever jumps to a date goes there to read it.
     setOpenId(target.workout.id);
     const element = document.getElementById(sessionAnchor(target.workout));
     const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;

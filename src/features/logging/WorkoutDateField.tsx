@@ -5,19 +5,19 @@ import { formatCompactDate, todayIso } from '@/lib/dates';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
 /**
- * Data dell'allenamento: etichetta e calendario, tutti e due nostri.
+ * Workout date: both the label and the calendar are ours.
  *
- * Un `<input type="date">` nudo non andava bene per due motivi. Scrive la data
- * nel formato della lingua del BROWSER, non in quella scelta nell'app: in
- * italiano poteva uscire `08/25/2026`, che nel resto del diario significa un
- * altro giorno. Ed e' largo: sul cover display si prendeva mezza intestazione
- * per un campo che si tocca una volta ogni tanto.
+ * A bare `<input type="date">` was wrong for two reasons. It writes the date in
+ * the BROWSER's locale, not the one chosen in the app: in Italian it could read
+ * `08/25/2026`, which everywhere else in the diary means another day. And it is
+ * wide: on the cover display it took half the header for a field that is
+ * touched once in a while.
  *
- * Restava il calendario di sistema, che sul telefono aperto e' ottimo. Sul
- * cover display (~360x360) pero' si taglia: mostra due settimane e il resto del
- * mese non si raggiunge (vedi `DatePicker`). E il cover e' proprio la superficie
- * dove si registra (spec §2.5), quindi il calendario ora e' il nostro — uguale
- * sulle due superfici, che e' anche un pensiero in meno.
+ * That left the system calendar, which is excellent on the unfolded phone. On
+ * the cover display (~360x360) it gets cut off though: it shows two weeks and
+ * the rest of the month is unreachable (see `DatePicker`). And the cover is
+ * precisely the surface where logging happens (spec §2.5), so the calendar is
+ * ours now — the same on both surfaces, which is one less thing to think about.
  */
 export function WorkoutDateField({
   value,

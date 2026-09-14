@@ -19,6 +19,7 @@ Env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. **Mai committare segreti**; 
 ## Convenzioni non negoziabili
 
 - **DB `snake_case`, TypeScript `camelCase`**, con un mapper al data-access layer. Nomi parlanti in inglese.
+- **I commenti nel codice si scrivono in inglese**, sempre, senza italianismi. Vale per commenti di blocco, JSDoc e commenti inline in `src/`, `scripts/` e SQL. Restano in italiano solo la prosa dei documenti (`docs/`, `README.md`, questo file) e le stringhe UI, che passano comunque dall'i18n.
 - **L'app è bilingue: italiano e inglese.** Sostituisce la vecchia regola "UI in italiano" (e §3 dello spec). Vedi la sezione qui sotto.
 - **TypeScript strict.** Niente `any` non giustificato.
 - **Il registro metriche (§4 dello spec) è l'UNICA fonte della semantica delle metriche**: best (min/max), direzione del trend, formatter, widget di input, tipo di grafico. **Non spargere** questa logica altrove — era il difetto centrale del prototipo.

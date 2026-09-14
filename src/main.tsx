@@ -9,8 +9,8 @@ import { readEnv } from '@/lib/env';
 import { guardStylesheets } from '@/lib/styleGuard';
 import '@/index.css';
 
-// Prima di tutto: se il CSS non e' arrivato, l'app va rimessa in piedi — senza
-// stile e' illeggibile, e nessuna schermata di errore si vedrebbe comunque.
+// First of all: if the CSS never arrived, the app has to be put back on its
+// feet — unstyled it is unreadable, and no error screen would be visible anyway.
 guardStylesheets();
 
 const rootElement = document.getElementById('root');

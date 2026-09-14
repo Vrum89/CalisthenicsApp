@@ -161,7 +161,7 @@ export interface DraftGroup {
   readonly entries: readonly DraftEntry[];
 }
 
-/** Raggruppa mantenendo l'ordine: la logica e' quella di dominio, una sola. */
+/** Groups while keeping the order: one shared implementation, in the domain. */
 export function groupEntries(entries: readonly DraftEntry[]): DraftGroup[] {
   return groupBySuperset(entries, (entry) => entry).map(({ supersetKey, members }) => ({
     supersetKey,

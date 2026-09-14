@@ -99,8 +99,8 @@ export function DashboardPage() {
     chartRef.current?.scrollIntoView({ block: 'nearest', behavior: smooth ? 'smooth' : 'auto' });
   }
 
-  // "Sto caricando" solo la prima volta: a ricarico, i dati vecchi restano a
-  // schermo finche' non arrivano i nuovi (vedi `useAsyncData.reload`).
+  // "Loading" only the first time: on a reload the old data stays on screen
+  // until the new one arrives (see `useAsyncData.reload`).
   const loading =
     (exercisesQuery.status === 'loading' && exercisesQuery.data.length === 0) ||
     (historyQuery.status === 'loading' && historyQuery.data.entries.length === 0);

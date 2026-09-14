@@ -18,15 +18,15 @@ const TYPE_LABEL: Record<WorkoutType, TranslationKey> = {
 };
 
 /**
- * Un allenamento nel diario: intestazione sempre visibile, dettaglio a richiesta.
+ * One workout in the diary: header always visible, detail on demand.
  *
- * Chiuso e' un riepilogo che si scorre: data, tipo, e una riga per esercizio con
- * quello che conta ("Chin up · 5x6 · 30 · +5 kg"). Aperto aggiunge cio' che
- * serve solo quando ci si ferma davvero su quel giorno: le serie una per una, le
- * note, il link ai progressi.
+ * Closed, it is a summary to scroll through: date, type, and one line per
+ * exercise with what matters ("Chin up · 5x6 · 30 · +5 kg"). Open, it adds what
+ * is only needed when you actually stop on that day: the sets one by one, the
+ * notes, the link to the charts.
  *
- * E' la stessa scelta dei Progressi, al contrario: li' il dettaglio e' il
- * grafico di un esercizio, qui e' il racconto di una giornata.
+ * Same choice as Progress, the other way round: there the detail is an
+ * exercise's chart, here it is the story of a day.
  */
 export function DiarySessionCard({
   session,
@@ -36,7 +36,7 @@ export function DiarySessionCard({
   onDelete,
 }: {
   session: DiarySession;
-  /** "Autunno 2026 · A", se l'allenamento e' nato da una scheda. */
+  /** "Autunno 2026 · A", when the workout was born from a program. */
   dayName: string | null;
   open: boolean;
   onToggle: () => void;

@@ -139,9 +139,9 @@ export function LogPage() {
       workoutType: 'from_program',
       programDayId: day.day.id,
       notes: '',
-      // I superset della scheda arrivano gia' agganciati: vanno pareggiati nei
-      // round come quando si aggancia a mano, o due scheme diversi (`5x5` e
-      // `3x10`) darebbero un giro mezzo vuoto.
+      // Supersets from the program arrive already linked: their rounds must be
+      // evened out as when linking by hand, or two different schemes (`5x5` and
+      // `3x10`) would leave a half-empty round.
       entries: groupEntries(loaded).flatMap((group) =>
         group.supersetKey === null ? group.entries : alignRounds(group.entries),
       ),
