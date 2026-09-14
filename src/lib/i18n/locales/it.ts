@@ -108,6 +108,7 @@ export const it = {
   'date.close': 'Chiudi il calendario',
   'date.today': 'Oggi',
   'date.yesterday': 'Ieri',
+  'date.clear': 'Nessuna data',
 
   'log.date': 'Data dell’allenamento',
   'log.today': 'oggi',
@@ -214,6 +215,7 @@ export const it = {
   'programs.namePlaceholder': 'es. Autunno 2026',
   'programs.start': 'Inizio',
   'programs.end': 'Fine',
+  'programs.noEnd': 'in corso',
   'programs.active': 'attiva',
   'programs.closed': 'chiusa il {date}',
   'programs.since': 'dal {date}',

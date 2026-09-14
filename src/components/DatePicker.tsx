@@ -29,12 +29,15 @@ export function DatePicker({
   value,
   max,
   onPick,
+  onClear,
   onClose,
 }: {
   value: string;
   /** Ultima data scegliibile, ISO. Un allenamento non si registra in anticipo. */
   max?: string;
   onPick: (iso: string) => void;
+  /** Se c'e', la data si puo' anche togliere: una scheda senza fine e' aperta. */
+  onClear?: () => void;
   onClose: () => void;
 }) {
   const { t, language } = useTranslation();
@@ -181,6 +184,15 @@ export function DatePicker({
           >
             {t('date.yesterday')}
           </button>
+          {onClear !== undefined && (
+            <button
+              type="button"
+              onClick={onClear}
+              className="tap-target flex-1 rounded-xl border border-slate-700 px-3 text-sm font-medium text-slate-400 hover:bg-slate-900"
+            >
+              {t('date.clear')}
+            </button>
+          )}
         </div>
       </div>
     </div>

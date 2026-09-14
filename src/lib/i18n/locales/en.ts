@@ -103,6 +103,7 @@ export const en: Record<TranslationKey, string> = {
   'date.close': 'Close the calendar',
   'date.today': 'Today',
   'date.yesterday': 'Yesterday',
+  'date.clear': 'No date',
 
   'log.date': 'Workout date',
   'log.today': 'today',
@@ -209,6 +210,7 @@ export const en: Record<TranslationKey, string> = {
   'programs.namePlaceholder': 'e.g. Autumn 2026',
   'programs.start': 'Start',
   'programs.end': 'End',
+  'programs.noEnd': 'ongoing',
   'programs.active': 'active',
   'programs.closed': 'closed on {date}',
   'programs.since': 'since {date}',

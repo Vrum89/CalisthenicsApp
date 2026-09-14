@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, LoaderCircle, Plus, TriangleAlert } from 'lucide-react';
+import { CalendarDays, ChevronLeft, LoaderCircle, Plus, TriangleAlert } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
+import { DatePicker } from '@/components/DatePicker';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { newSupersetKey, normalizeSupersets, supersetRun } from '@/domain/superset';
 import type { ProgramExercise } from '@/domain/types';
@@ -23,7 +24,7 @@ import {
   type ProgramDetail,
 } from '@/features/programs/programsRepository';
 import { usePrograms } from '@/features/programs/usePrograms';
-import { formatDate, todayIso } from '@/lib/dates';
+import { formatCompactDate, formatDate, todayIso } from '@/lib/dates';
 import { describeError } from '@/lib/errors';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
@@ -56,6 +57,16 @@ export function ProgramsPage() {
   const schemesByExercise = knownSchemes(history.data);
 
   const [openId, setOpenId] = useState<string | null>(null);
+  /**
+   * La data che si sta scegliendo, se c'e'. Il calendario e' il nostro anche
+   * qui: il campo `date` di sistema, su un browser da scrivania, si apre solo
+   * cliccando la sua iconcina — sul telefono basta toccarlo, e la differenza
+   * fra le due superfici non e' spiegabile a chi la usa.
+   */
+  const [pickingDate, setPickingDate] = useState<{
+    programId: string;
+    field: 'start' | 'end';
+  } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
@@ -206,6 +217,17 @@ export function ProgramsPage() {
     );
   }
 
+  const pickedProgram =
+    pickingDate === null
+      ? null
+      : (programs.data.find((detail) => detail.program.id === pickingDate.programId) ?? null);
+  const dateBeingPicked =
+    pickedProgram === null
+      ? null
+      : pickingDate?.field === 'start'
+        ? pickedProgram.program.startDate
+        : pickedProgram.program.endDate;
+
   function renderProgram(detail: ProgramDetail) {
     const { program, days } = detail;
     const open = openId === program.id;
@@ -255,37 +277,27 @@ export function ProgramsPage() {
             </div>
 
             <div className="flex gap-2">
-              <label className="min-w-0 flex-1 space-y-1">
-                <span className="block text-xs text-slate-500">{t('programs.start')}</span>
-                <input
-                  type="date"
-                  defaultValue={program.startDate}
-                  onBlur={(event) => {
-                    if (event.target.value !== '' && event.target.value !== program.startDate) {
-                      run(() =>
-                        updateProgram(program.id, {
-                          startDate: event.target.value,
-                        }),
-                      );
-                    }
-                  }}
-                  className="tap-target w-full rounded-xl border border-slate-700 bg-slate-900 px-3 text-base text-slate-100"
-                />
-              </label>
-              <label className="min-w-0 flex-1 space-y-1">
-                <span className="block text-xs text-slate-500">{t('programs.end')}</span>
-                <input
-                  type="date"
-                  defaultValue={program.endDate ?? ''}
-                  onBlur={(event) => {
-                    const value = event.target.value === '' ? null : event.target.value;
-                    if (value !== program.endDate) {
-                      run(() => updateProgram(program.id, { endDate: value }));
-                    }
-                  }}
-                  className="tap-target w-full rounded-xl border border-slate-700 bg-slate-900 px-3 text-base text-slate-100"
-                />
-              </label>
+              {(['start', 'end'] as const).map((field) => {
+                const iso = field === 'start' ? program.startDate : program.endDate;
+                return (
+                  <div key={field} className="min-w-0 flex-1 space-y-1">
+                    <span className="block text-xs text-slate-500">
+                      {t(field === 'start' ? 'programs.start' : 'programs.end')}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        setPickingDate({ programId: program.id, field });
+                      }}
+                      className="tap-target flex w-full items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-3 text-base text-slate-100 tabular-nums disabled:opacity-40"
+                    >
+                      <CalendarDays aria-hidden className="size-4 shrink-0 text-slate-500" />
+                      {iso === null ? t('programs.noEnd') : formatCompactDate(language, iso)}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
 
             <p className="text-xs leading-relaxed text-slate-500">{t('programs.hint')}</p>
@@ -447,6 +459,35 @@ export function ProgramsPage() {
 
         {programs.data.length > 0 && (
           <ul className="space-y-3">{programs.data.map(renderProgram)}</ul>
+        )}
+
+        {pickingDate !== null && (
+          <DatePicker
+            value={dateBeingPicked ?? todayIso()}
+            onPick={(iso) => {
+              const target = pickingDate;
+              setPickingDate(null);
+              run(() =>
+                updateProgram(
+                  target.programId,
+                  target.field === 'start' ? { startDate: iso } : { endDate: iso },
+                ),
+              );
+            }}
+            {...(pickingDate.field === 'end'
+              ? {
+                  // Una scheda senza fine e' semplicemente ancora in corso.
+                  onClear: () => {
+                    const target = pickingDate;
+                    setPickingDate(null);
+                    run(() => updateProgram(target.programId, { endDate: null }));
+                  },
+                }
+              : {})}
+            onClose={() => {
+              setPickingDate(null);
+            }}
+          />
         )}
 
         <button
