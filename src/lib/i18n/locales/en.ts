@@ -49,6 +49,8 @@ export const en: Record<TranslationKey, string> = {
 
   'nav.log': 'Log a workout',
   'nav.logHint': 'Tick your sets as you train',
+  'nav.diary': 'Diary',
+  'nav.diaryHint': 'Your workouts day by day',
   'nav.programs': 'Programs',
   'nav.programsHint': 'Create and edit your programs',
   'nav.dashboard': 'Progress',
@@ -56,6 +58,16 @@ export const en: Record<TranslationKey, string> = {
   'nav.bodyWeight': 'Body weight',
   'nav.bodyWeightHint': 'Log a weigh-in and see the trend',
   'nav.back': 'Back',
+
+  'diary.title': 'Diary',
+  'diary.empty': 'No workouts logged yet. The first one you save shows up here.',
+  'diary.count': '{count} workout, since {from}',
+  'diary.counts': '{count} workouts, since {from}',
+  'diary.exercise': '{count} exercise',
+  'diary.exercises': '{count} exercises',
+  'diary.jump': 'Jump to a date',
+  'diary.openProgress': 'Open this exercise’s progress →',
+  'diary.deleteConfirm': 'Delete "{name}" from this workout? This cannot be undone.',
 
   'dashboard.title': 'Progress',
   'dashboard.exercise': 'Exercise',
@@ -95,6 +107,7 @@ export const en: Record<TranslationKey, string> = {
   'style.title': 'The stylesheet is missing',
   'style.body': 'The app itself arrived, but the file that lays it out did not: it happens when the connection drops at the wrong moment, or when a broken copy is left in storage. Retrying and reloading did not help. This button clears everything the app keeps on the device and starts clean: nothing is lost, your workouts live on the server.',
   'style.reset': 'Clear the cache and restart',
+  'style.detail': 'Technical detail: {detail} · version {version}',
 
   'date.title': 'Pick the date',
   'date.previousMonth': 'Previous month',
@@ -102,6 +115,7 @@ export const en: Record<TranslationKey, string> = {
   'date.close': 'Close the calendar',
   'date.today': 'Today',
   'date.yesterday': 'Yesterday',
+  'date.clear': 'No date',
 
   'log.date': 'Workout date',
   'log.today': 'today',
@@ -208,6 +222,7 @@ export const en: Record<TranslationKey, string> = {
   'programs.namePlaceholder': 'e.g. Autumn 2026',
   'programs.start': 'Start',
   'programs.end': 'End',
+  'programs.noEnd': 'ongoing',
   'programs.active': 'active',
   'programs.closed': 'closed on {date}',
   'programs.since': 'since {date}',

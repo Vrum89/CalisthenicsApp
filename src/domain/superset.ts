@@ -43,6 +43,47 @@ export function supersetRun<T extends SupersetMember>(
   return members.slice(start, end + 1);
 }
 
+export interface SupersetGroup<T> {
+  /** `null` per un esercizio da solo. */
+  readonly supersetKey: string | null;
+  readonly members: readonly T[];
+}
+
+/**
+ * Raggruppa per superset mantenendo l'ordine: un gruppo sta dove sta il suo
+ * primo membro, e chi condivide la chiave lo raggiunge li'.
+ *
+ * Generica sul tipo perche' serve identica su due forme diverse: le voci di una
+ * bozza in corso e le righe gia' salvate che si rileggono nel diario. `keyOf`
+ * dice dove trovare la chiave quando non e' sull'oggetto stesso.
+ */
+export function groupBySuperset<T>(
+  members: readonly T[],
+  keyOf: (member: T) => SupersetMember,
+): SupersetGroup<T>[] {
+  const groups: SupersetGroup<T>[] = [];
+  const indexByKey = new Map<string, number>();
+
+  for (const member of members) {
+    const key = keyOf(member).supersetKey;
+    if (key === null) {
+      groups.push({ supersetKey: null, members: [member] });
+      continue;
+    }
+
+    const existing = indexByKey.get(key);
+    if (existing === undefined) {
+      indexByKey.set(key, groups.length);
+      groups.push({ supersetKey: key, members: [member] });
+    } else {
+      const group = groups[existing];
+      if (group) groups[existing] = { ...group, members: [...group.members, member] };
+    }
+  }
+
+  return groups;
+}
+
 export interface SupersetAssignment {
   readonly supersetKey: string | null;
   readonly supersetOrder: number | null;

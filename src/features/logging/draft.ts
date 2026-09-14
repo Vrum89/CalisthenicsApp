@@ -14,6 +14,7 @@
  */
 
 import { deriveMetricValue, metricConfig } from '@/domain/metrics';
+import { groupBySuperset } from '@/domain/superset';
 import { describeScheme, parseScheme } from '@/domain/scheme';
 import type { Exercise, MetricType, WorkoutExercise, WorkoutType } from '@/domain/types';
 
@@ -160,28 +161,12 @@ export interface DraftGroup {
   readonly entries: readonly DraftEntry[];
 }
 
-/** Raggruppa mantenendo l'ordine: un gruppo sta dove sta la sua prima voce. */
+/** Raggruppa mantenendo l'ordine: la logica e' quella di dominio, una sola. */
 export function groupEntries(entries: readonly DraftEntry[]): DraftGroup[] {
-  const groups: DraftGroup[] = [];
-  const indexByKey = new Map<string, number>();
-
-  for (const entry of entries) {
-    if (entry.supersetKey === null) {
-      groups.push({ supersetKey: null, entries: [entry] });
-      continue;
-    }
-
-    const existing = indexByKey.get(entry.supersetKey);
-    if (existing === undefined) {
-      indexByKey.set(entry.supersetKey, groups.length);
-      groups.push({ supersetKey: entry.supersetKey, entries: [entry] });
-    } else {
-      const group = groups[existing];
-      if (group) groups[existing] = { ...group, entries: [...group.entries, entry] };
-    }
-  }
-
-  return groups;
+  return groupBySuperset(entries, (entry) => entry).map(({ supersetKey, members }) => ({
+    supersetKey,
+    entries: members,
+  }));
 }
 
 /**

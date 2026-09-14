@@ -164,3 +164,14 @@ Import del repository, framework preset **Vite** (build `npm run build`, output
 `dist`). Le due variabili d'ambiente vanno impostate in
 **Settings → Environment Variables**. `vercel.json` contiene già il rewrite SPA
 necessario a servire `/login` e `/auth/callback`.
+
+Il rewrite è `/((?!assets/).*)`, non un catch-all: gli asset con hash sono
+esclusi di proposito. Con il catch-all, un file mancante — deploy ancora in
+propagazione, riferimento a una versione appena sostituita — tornava come
+`200 text/html` invece di `404`, e il browser rifiutava in silenzio un CSS che
+sembrava arrivato: l'app si vedeva senza stile, senza un errore da nessuna
+parte. Con l'esclusione, se un file non c'è si vede che non c'è.
+
+`vercel.json` è validato da Vercel contro uno schema che **rifiuta le proprietà
+sconosciute**: niente chiavi `"//"` usate come commento dentro `rewrites` o
+`headers`, o il deploy fallisce prima di partire. Le spiegazioni stanno qui.

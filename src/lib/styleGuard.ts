@@ -91,11 +91,28 @@ async function resetCaches(): Promise<void> {
 }
 
 /**
+ * Cosa risponde davvero il server per quel file.
+ *
+ * E' la riga che distingue le due famiglie di cause senza doverle indovinare a
+ * posteriori: `200 text/html` vuol dire che il file non c'e' e qualcuno ha
+ * risposto con la pagina al posto suo; un errore di rete vuol dire che non e'
+ * arrivato; `200 text/css` vuol dire che il problema sta in una copia in cache.
+ */
+async function probe(href: string): Promise<string> {
+  try {
+    const response = await fetch(href, { cache: 'reload' });
+    return `${String(response.status)} ${response.headers.get('content-type') ?? '?'}`;
+  } catch (cause) {
+    return cause instanceof Error ? cause.message : 'fetch failed';
+  }
+}
+
+/**
  * Il pannello si disegna con stili in linea, non con classi: il CSS e'
  * esattamente cio' che manca. Le stringhe passano dall'i18n come ovunque, con
  * la lingua letta a mano — React non e' ancora montato.
  */
-function showRecoveryPanel(): void {
+function showRecoveryPanel(detail: string): void {
   const language = detectLanguage();
   const panel = document.createElement('div');
   panel.setAttribute('role', 'alert');
@@ -121,7 +138,16 @@ function showRecoveryPanel(): void {
     void resetCaches();
   });
 
-  panel.append(title, body, button);
+  // La riga tecnica: serve a chi dovra' capire cosa e' successo, e sta in
+  // fondo perche' a chi si allena non dice niente.
+  const diagnostics = document.createElement('p');
+  diagnostics.textContent = translate(language, 'style.detail', {
+    detail,
+    version: __APP_VERSION__,
+  });
+  diagnostics.style.cssText = 'margin:20px 0 0;font-size:13px;color:#94a3b8;word-break:break-word';
+
+  panel.append(title, body, button, diagnostics);
   document.body.prepend(panel);
 }
 
@@ -147,6 +173,7 @@ export function guardStylesheets(): void {
     }
 
     // Gia' ricaricato e ancora senza stile: non e' un singhiozzo di rete.
-    showRecoveryPanel();
+    const href = failed[0]?.href;
+    void (href === undefined ? Promise.resolve('?') : probe(href)).then(showRecoveryPanel);
   });
 }

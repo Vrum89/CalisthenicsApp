@@ -339,6 +339,11 @@ Elenco voci in ordine cronologico inverso, con badge PR sul record.
 Trend peso corporeo: grafico a linea del peso nel tempo (da `body_weights`), come sezione a sé rispetto alle metriche per-esercizio.
 Le voci con `isExcluded = true` (allenamento fatto sotto infortunio, non al massimo) sono mostrate ma escluse dai calcoli di best/trend/PR, e visualizzate attenuate con l'`exclusionReason`.
 ---
+6.1 Diario (per data) — aggiunta del 14/09/2026
+Le dashboard tagliano lo storico per esercizio e rispondono a "come sto andando nelle trazioni". Manca(va) l'altra lettura, quella che il diario su Keep dava gratis: "cosa ho fatto martedi'". E' una schermata a se' (`/diary`), raggiungibile dalla home, che elenca gli allenamenti dal piu' recente: data, tipo (o nome del giorno di scheda) e una riga per esercizio col riepilogo. Toccando una giornata si apre il dettaglio: serie per serie, note della voce e dell'allenamento, link ai progressi di quell'esercizio. Da li' si cancella anche una voce sbagliata (stesso gesto e stessa conferma dell'elenco in §6), e si salta a una data col calendario.
+Nessun dato nuovo e nessuna query in piu': e' lo stesso storico gia' caricato per le dashboard, raggruppato per allenamento (`domain/diary.ts`). Nessun calcolo: record e trend restano per esercizio, dove hanno senso.
+E' consultazione, quindi vale la regola di §2.5 — display principale — ma la vista resta a colonna singola e regge i 360 px come il resto.
+
 7. Backup / JSON export
 Rete di sicurezza contro la pausa/perdita del progetto Supabase free tier (nessun backup automatico lato Supabase). L'app esporta tutti i dati dell'utente (exercises, programs + days + exercises, workouts + exercises, body_weights) in un unico file JSON scaricabile su richiesta. Quel file è il backup: vive indipendente da Supabase e permette di ripartire su qualsiasi altro database. Zero lock-in.
 (Opzionale) Mantenere anche l'export CSV del prototipo (separatore `;` + BOM per Excel) come comodità secondaria.
@@ -373,6 +378,7 @@ Il peso corporeo (`body_weights`) non ha storico da migrare: parte vuoto, si pop
 [ ] Flag `isExcluded` (infortunio) + `exclusionReason`, con esclusione dai calcoli in dashboard.
 [ ] Dashboard (§6) alimentate da Supabase.
 [ ] Registro pesate (peso corporeo): tabella `body_weights`, input minimo indipendente, nudge a inizio scheda, grafico di trend (§5.7, §6).
+[ ] Diario per data (§6.1): elenco delle sessioni, dettaglio a richiesta, cancellazione di una voce, salto a una data.
 [ ] JSON export completo (backup).
 [ ] Migrazione dei dati esistenti (§8).
 ---

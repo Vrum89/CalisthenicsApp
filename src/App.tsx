@@ -4,6 +4,7 @@ import { LoginPage } from '@/features/auth/LoginPage';
 import { RequireAuth } from '@/features/auth/RequireAuth';
 import { BodyWeightPage } from '@/features/bodyWeight/BodyWeightPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
+import { DiaryPage } from '@/features/history/DiaryPage';
 import { LogPage } from '@/features/logging/LogPage';
 import { ProgramsPage } from '@/features/programs/ProgramsPage';
 import { HomePage } from '@/routes/HomePage';
@@ -34,6 +35,14 @@ export function App() {
         element={
           <RequireAuth>
             <DashboardPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/diary"
+        element={
+          <RequireAuth>
+            <DiaryPage />
           </RequireAuth>
         }
       />
