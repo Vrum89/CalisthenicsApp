@@ -49,6 +49,8 @@ export const en: Record<TranslationKey, string> = {
 
   'nav.log': 'Log a workout',
   'nav.logHint': 'Tick your sets as you train',
+  'nav.diary': 'Diary',
+  'nav.diaryHint': 'Your workouts day by day',
   'nav.programs': 'Programs',
   'nav.programsHint': 'Create and edit your programs',
   'nav.dashboard': 'Progress',
@@ -56,6 +58,16 @@ export const en: Record<TranslationKey, string> = {
   'nav.bodyWeight': 'Body weight',
   'nav.bodyWeightHint': 'Log a weigh-in and see the trend',
   'nav.back': 'Back',
+
+  'diary.title': 'Diary',
+  'diary.empty': 'No workouts logged yet. The first one you save shows up here.',
+  'diary.count': '{count} workout, since {from}',
+  'diary.counts': '{count} workouts, since {from}',
+  'diary.exercise': '{count} exercise',
+  'diary.exercises': '{count} exercises',
+  'diary.jump': 'Jump to a date',
+  'diary.openProgress': 'Open this exercise’s progress →',
+  'diary.deleteConfirm': 'Delete "{name}" from this workout? This cannot be undone.',
 
   'dashboard.title': 'Progress',
   'dashboard.exercise': 'Exercise',

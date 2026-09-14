@@ -54,6 +54,8 @@ export const it = {
 
   'nav.log': 'Registra allenamento',
   'nav.logHint': 'Spunta le serie mentre ti alleni',
+  'nav.diary': 'Diario',
+  'nav.diaryHint': 'Gli allenamenti giorno per giorno',
   'nav.programs': 'Schede',
   'nav.programsHint': 'Crea e modifica i tuoi programmi',
   'nav.dashboard': 'Progressi',
@@ -61,6 +63,16 @@ export const it = {
   'nav.bodyWeight': 'Peso corporeo',
   'nav.bodyWeightHint': 'Registra una pesata e guarda l’andamento',
   'nav.back': 'Indietro',
+
+  'diary.title': 'Diario',
+  'diary.empty': 'Nessun allenamento registrato. Il primo che salvi compare qui.',
+  'diary.count': '{count} allenamento, dal {from}',
+  'diary.counts': '{count} allenamenti, dal {from}',
+  'diary.exercise': '{count} esercizio',
+  'diary.exercises': '{count} esercizi',
+  'diary.jump': 'Vai a una data',
+  'diary.openProgress': 'Apri i progressi di questo esercizio →',
+  'diary.deleteConfirm': 'Cancellare «{name}» da questo allenamento? Non si può annullare.',
 
   'dashboard.title': 'Progressi',
   'dashboard.exercise': 'Esercizio',

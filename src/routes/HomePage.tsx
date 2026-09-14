@@ -7,7 +7,7 @@ import {
   ClipboardList,
   Dumbbell,
   LogOut,
-  Scale,
+  Scale,  NotebookPen,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
@@ -39,6 +39,12 @@ const DESTINATIONS: readonly {
     hintKey: 'nav.dashboardHint',
   },
   {
+    to: '/diary',
+    icon: NotebookPen,
+    labelKey: 'nav.diary',
+    hintKey: 'nav.diaryHint',
+  },
+  {
     to: '/programs',
     icon: ClipboardList,
     labelKey: 'nav.programs',
@@ -52,7 +58,7 @@ const DESTINATIONS: readonly {
   },
 ];
 
-/** Punto di partenza dell'app: registrazione, progressi, peso. */
+/** Punto di partenza dell'app: registrazione, progressi, diario, schede, peso. */
 export function HomePage() {
   const { user, signOut } = useAuth();
   const { t, language } = useTranslation();
