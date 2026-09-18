@@ -121,6 +121,11 @@ export const it = {
   'style.reset': 'Svuota la cache e riavvia',
   'style.detail': 'Dettaglio tecnico: {detail} · versione {version}',
 
+  'number.confirm': 'Fatto',
+  'number.clear': 'Azzera',
+  'number.backspace': 'Cancella l’ultima cifra',
+  'number.close': 'Chiudi il tastierino',
+
   'date.title': 'Scegli la data',
   'date.previousMonth': 'Mese precedente',
   'date.nextMonth': 'Mese successivo',

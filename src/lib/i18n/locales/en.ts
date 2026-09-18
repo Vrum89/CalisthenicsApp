@@ -116,6 +116,11 @@ export const en: Record<TranslationKey, string> = {
   'style.reset': 'Clear the cache and restart',
   'style.detail': 'Technical detail: {detail} · version {version}',
 
+  'number.confirm': 'Done',
+  'number.clear': 'Clear',
+  'number.backspace': 'Delete the last digit',
+  'number.close': 'Close the number pad',
+
   'date.title': 'Pick the date',
   'date.previousMonth': 'Previous month',
   'date.nextMonth': 'Next month',

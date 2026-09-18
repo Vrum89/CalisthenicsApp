@@ -49,6 +49,7 @@ Safe areas. `<meta name="viewport" content="width=device-width, initial-scale=1,
 Grafici responsive (solo display principale): recharts con `ResponsiveContainer` 100%; a ~360–411 px ridurre densità dei tick, evitare overflow della legenda del doppio asse, valutare scroll orizzontale o aggregazione per molte sessioni.
 Degradazione graziosa. Non rompersi tra ~320 e ~411 px in entrambe le dimensioni; testo base ≥ 16 px, unità `rem`, icone vettoriali/SVG per la nitidezza ad alta densità.
 PWA standalone: `display: standalone`, `theme-color`, manifest completo; gestire gli inset dinamici.
+I widget di sistema che non reggono i 360x360 si sostituiscono con i nostri. Due casi trovati sul campo: il *calendario* (il dialog Android cambia impaginazione e mostra due sole settimane, il resto del mese non si raggiunge) e la *tastiera numerica* (senza spazio sopra, l'IME passa in modalita' a schermo intero e disegna un proprio campo di testo: si digita alla cieca, senza vedere l'esercizio). Nessuno dei due si puo' governare dal web — `flagNoExtractUi` e simili sono attributi delle app native — quindi in quei punti l'app disegna il proprio calendario (`DatePicker`) e il proprio tastierino (`NumberPad`), identici sulle due superfici.
 In sviluppo testare a due viewport: ~360×360 quadrato (cover, per il logging) e ~411 × 915 (principale), oltre a un sanity check desktop.
 ---
 3. Modello dati
