@@ -55,7 +55,8 @@ export function NumberPad({
   function press(key: string) {
     setTyped((current) => {
       if (key === 'backspace') return current.slice(0, -1);
-      if (key === ',') return current.includes(',') ? current : `${current === '' ? '0' : current},`;
+      if (key === ',')
+        return current.includes(',') ? current : `${current === '' ? '0' : current},`;
       // A leading zero is never what someone means: typing 1 after it gives 1.
       const next = current === '0' ? key : current + key;
       return next.length > 6 ? current : next;
@@ -85,38 +86,41 @@ export function NumberPad({
       role="dialog"
       aria-modal="true"
       aria-label={label}
-      className="px-safe pt-safe pb-safe fixed top-0 left-0 z-50 flex h-dvh w-full justify-center bg-slate-950"
+      /* A panel at the bottom, not a full screen: on the main display the keys
+         would stretch to the height of the phone, and down here they fall under
+         the thumb (spec §2.5). The exercise stays visible behind it. */
+      className="px-safe fixed inset-0 z-50 flex flex-col justify-end bg-slate-950/70"
     >
-      <div className="flex h-full w-full max-w-md flex-col px-3 py-2">
-        <header className="flex shrink-0 items-center gap-2">
+      {/* Three bands, as in the calendar: label and commands never move, and
+          the only thing that scrolls is the keys — on a 360x300 window (cover
+          plus system bar) "Done" stays under the thumb instead of below the
+          edge. */}
+      <div className="pb-safe mx-auto flex max-h-dvh w-full max-w-md flex-col gap-2 rounded-t-2xl border-t border-slate-700 bg-slate-950 px-3 py-2">
+        {/* Label and value on one line: two separate rows cost 40 px, which on
+              a 360 px screen is the difference between fitting and scrolling. */}
+        <header className="flex shrink-0 items-baseline gap-2 border-b border-slate-800 pb-2">
           <span className="min-w-0 flex-1 truncate text-sm text-slate-400">{label}</span>
+          <span aria-live="polite" className="text-2xl font-semibold text-slate-100 tabular-nums">
+            {typed === '' ? <span className="text-slate-600">0</span> : typed}
+          </span>
+          {unit !== undefined && unit !== '' && (
+            <span className="shrink-0 text-sm text-slate-500">{unit}</span>
+          )}
           <button
             type="button"
             aria-label={t('number.close')}
             onClick={onClose}
-            className="tap-target flex shrink-0 items-center justify-center rounded-lg text-slate-400 hover:text-slate-100"
+            className="tap-target -mr-2 flex shrink-0 items-center justify-center rounded-lg text-slate-400 hover:text-slate-100"
           >
             <X aria-hidden className="size-5" />
           </button>
         </header>
 
-        {/* What is being typed, big: on the cover it is the only feedback, and
-            the system field that used to show it is exactly what is gone. */}
-        <p
-          aria-live="polite"
-          className="shrink-0 border-b border-slate-800 pb-2 text-right text-3xl font-semibold text-slate-100 tabular-nums"
-        >
-          {typed === '' ? <span className="text-slate-600">0</span> : typed}
-          {unit !== undefined && unit !== '' && (
-            <span className="pl-2 text-base font-normal text-slate-500">{unit}</span>
-          )}
-        </p>
-
-        <div className="grid min-h-0 flex-1 grid-cols-3 gap-1.5 py-2">
+        <div className="grid min-h-0 auto-rows-[minmax(2.75rem,3.25rem)] grid-cols-3 gap-1.5 overflow-y-auto">
           {keys.map((key, index) =>
             key === '' ? (
-              // The gap where the comma would be: its key must not collide with
-              // the digit that happens to sit at the same position.
+              // The gap where the comma would be: its key must not collide
+              // with the digit that happens to sit at the same position.
               <span key={`gap-${String(index)}`} />
             ) : (
               <button
